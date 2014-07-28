@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
-	"github.com/joernweissenborn/AurSirRt/Dock"
-	"github.com/joernweissenborn/AurSirRt/Core"
+	"github.com/joernweissenborn/aursirrt/core"
+	"github.com/joernweissenborn/aursirrt/dock"
+	"os"
+	"os/signal"
 )
 
 func main(){
@@ -12,14 +14,20 @@ func main(){
 
 	quit := make(chan struct {})
 
-	aic := make(chan Core.AppMessage,100)
-	aoc := make(chan Core.AppMessage,100)
+	aic := make(chan core.AppMessage,100)
+	aoc := make(chan core.AppMessage,100)
 
 
-	Core.Launch(aic,aoc)
+	core.Launch(aic,aoc)
 
-	Dock.Launch(aic,aoc)
-
+	dock.Launch(aic,aoc)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func(){
+		for sig := range c {
+			log.Println("ShuttingDOwn",sig)
+		}
+	}()
 	<- quit
 
 }
