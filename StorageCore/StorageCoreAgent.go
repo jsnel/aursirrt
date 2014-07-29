@@ -1,6 +1,9 @@
-package StorageCore
+package storagecore
 
-import "log"
+import (
+	"log"
+	"github.com/joernweissenborn/AurSir4Go"
+)
 
 type StorageCoreAgent struct {
 	write       chan StorageRequestItem
@@ -53,8 +56,10 @@ func (sca StorageCoreAgent) listen() {
 
 		case readRequest, ok := <-sca.read:
 			if ok {
-				sca.dowrite(readRequest)
-			}
+				readRequest.reply <-sca.doread(readRequest)
+			}else{
+		readRequest.reply <- ReadFail{}
+		}
 
 		}
 	}
@@ -80,16 +85,33 @@ func (sca StorageCoreAgent) dowrite(req StorageRequestItem) StorageReply {
 	case AddReqRequest:
 		return ReqRegistered{sca.storageCore.addRequest(request)}
 	case AddResRequest:
-		return ResRegistered{sca.storageCore.addResult(request)}
+		return sca.storageCore.addResult(request)
 	case ListenRequest:
 		sca.storageCore.addFuncListen(request)
 		return WriteOk{}
+
+	case UpdateExportRequest:
+		return sca.storageCore.updateExport(request)
+	case UpdateImportRequest:
+		return sca.storageCore.updateImport(request)
+	case AddCallChainRequest:
+		return sca.storageCore.addCallChain(request)
 	default:
 		return WriteFail{}
 	}
 
 }
 
-func (sca StorageCoreAgent) doread(req StorageRequestItem) {
+func (sca StorageCoreAgent) doread(req StorageRequestItem) StorageReply{
+	switch request := req.request.(type) {
 
+	case GetAppKey:
+		kv := sca.storageCore.getKeyVertex(request.KeyName)
+		if kv == nil {return ReadFail{}}
+		k, _ :=kv.Properties.(AurSir4Go.AppKey)
+		return k
+
+	default:
+		return ReadFail{}
+	}
 }

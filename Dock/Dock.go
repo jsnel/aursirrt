@@ -1,16 +1,16 @@
-package Dock
+package dock
 
 import (
 	"log"
-	"github.com/joernweissenborn/AurSirRt/Core"
+	"github.com/joernweissenborn/aursirrt/core"
 )
 
 type registerDockedApp struct{
 	AppId string
-	AppChan chan Core.AppMessage
+	AppChan chan core.AppMessage
 }
 
-func Launch(ic, oc chan Core.AppMessage){
+func Launch(ic, oc chan core.AppMessage){
 
 	log.Println("Dock Launching")
 
@@ -27,8 +27,8 @@ func Launch(ic, oc chan Core.AppMessage){
 
 }
 
-func dockRouter(mc chan Core.AppMessage, rc chan registerDockedApp ){
-	routeTable := make(map[string]chan Core.AppMessage)
+func dockRouter(mc chan core.AppMessage, rc chan registerDockedApp ){
+	routeTable := make(map[string]chan core.AppMessage)
 	for{
 	select {
 	case appregister, ok := <- rc:

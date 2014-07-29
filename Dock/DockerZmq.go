@@ -1,8 +1,8 @@
-package Dock
+package dock
 
 import (
 	"log"
-	"github.com/joernweissenborn/AurSirRt/Core"
+	"github.com/joernweissenborn/aursirrt/core"
 	"github.com/joernweissenborn/AurSir4Go"
 	zmq "github.com/pebbe/zmq4"
 
@@ -11,11 +11,11 @@ import (
 )
 
 type DockerZmq struct {
-	msgChan chan Core.AppMessage
+	msgChan chan core.AppMessage
 	regChan chan registerDockedApp
 }
 
-func (dzmq DockerZmq) Launch(mc chan Core.AppMessage, rc chan registerDockedApp) {
+func (dzmq DockerZmq) Launch(mc chan core.AppMessage, rc chan registerDockedApp) {
 
 	log.Println("DockerZMQ Launching")
 
@@ -55,19 +55,19 @@ func (dzmq DockerZmq) listen(skt *zmq.Socket) {
 		if err ==nil{
 
 			if msgtype == AurSir4Go.DOCK{
-				c := make(chan Core.AppMessage )
+				c := make(chan core.AppMessage )
 
 				dzmq.regChan <- registerDockedApp{senderId, c}
 				go dzmq.openConnection(msg[4],c)
 			}
-
-			dzmq.msgChan <- Core.AppMessage{senderId,AurSir4Go.AppMessage{msgtype,msg[2],[]byte(msg[3])}}
+			encmsg := []byte(msg[3])
+			dzmq.msgChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{msgtype,msg[2],&encmsg}}
 		}
 	}
 	}
 }
 
-func (dzmq DockerZmq) openConnection(port string, c chan Core.AppMessage){
+func (dzmq DockerZmq) openConnection(port string, c chan core.AppMessage){
 
 	skt, _ := zmq.NewSocket(zmq.DEALER)
 	defer skt.Close()
@@ -85,10 +85,8 @@ func (dzmq DockerZmq) openConnection(port string, c chan Core.AppMessage){
 
 
 		appmsg := msg.AppMsg
-		log.Println("")
-		log.Println(appmsg)
 		_,err := skt.SendMessage(
-			[]string{strconv.FormatInt(appmsg.MsgType,10),appmsg.MsgCodec,string(appmsg.Msg)},0)
+			[]string{strconv.FormatInt(appmsg.MsgType,10),appmsg.MsgCodec,string(*appmsg.Msg)},0)
 
 
 		if err != nil {

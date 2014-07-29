@@ -117,7 +117,6 @@ func (dws DockerWebSockets) processMsg(senderId string,msgType int64,msgCodec *[
 
 	dws.appInChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{msgType,codec,msgBytes}}
 
-	log.Println(msgBytes)
 
 }
 
@@ -132,10 +131,9 @@ func (dws DockerWebSockets) openConnection(ws *websocket.Conn, closed chan struc
 		select {
 		case msg, _ := <- c:
 			appmsg := (msg.AppMsg)
-			log.Println(*appmsg.Msg)
 			websocket.Message.Send(ws,strconv.FormatInt(appmsg.MsgType,10))
 			websocket.Message.Send(ws,appmsg.MsgCodec)
-			websocket.Message.Send(ws,*appmsg.Msg)
+			websocket.Message.Send(ws,string(*appmsg.Msg))
 
 		case <- closed:
 			return

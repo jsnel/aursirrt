@@ -1,6 +1,7 @@
-package Dock
+package dock
 
 func CfgDocker() []Docker {
 	return []Docker{
-		DockerZmq{}}
+		DockerZmq{},
+		DockerWebSockets{}}
 }
