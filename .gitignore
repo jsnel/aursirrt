@@ -7,6 +7,8 @@
 *.o
 *.a
 *.so
+*.dll
+*.exe
 
 # Folders
 _obj
@@ -27,3 +29,5 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+/Database
