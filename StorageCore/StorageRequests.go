@@ -1,6 +1,6 @@
 package storagecore
 
-import "github.com/joernweissenborn/AurSir4Go"
+import "github.com/joernweissenborn/aursir4go"
 
 //Base interface for all storage requests
 type StorageRequestItem struct {
@@ -21,38 +21,38 @@ type RemoveAppRequest struct {
 
 type AddExportRequest struct {
 	Id     string
-	AppKey AurSir4Go.AppKey
+	AppKey aursir4go.AppKey
 	Tags   []string
 }
 
 type UpdateExportRequest struct {
-	Req AurSir4Go.AurSirUpdateExportMessage
+	Req aursir4go.AurSirUpdateExportMessage
 }
 
 type UpdateImportRequest struct {
-	Req AurSir4Go.AurSirUpdateImportMessage
+	Req aursir4go.AurSirUpdateImportMessage
 }
 
 
 type AddImportRequest struct {
 	Id     string
-	AppKey AurSir4Go.AppKey
+	AppKey aursir4go.AppKey
 	Tags   []string
 }
 
 type AddReqRequest struct {
 	AppId string
-	Req AurSir4Go.AurSirRequest
+	Req aursir4go.AurSirRequest
 }
 
 type AddResRequest struct {
 	AppId string
-	Req AurSir4Go.AurSirResult
+	Req aursir4go.AurSirResult
 }
 
 type AddCallChainRequest struct {
 	AppId string
-	Req AurSir4Go.AurSirCallChain
+	Req aursir4go.AurSirCallChain
 }
 
 type ListenRequest struct {
@@ -81,7 +81,7 @@ type ExportAdded struct {
 	ExportId         string
 	ConnectedImports map[string]string
 	DisconnectedImports map[string]string
-	PendingJobs []AurSir4Go.AurSirRequest
+	PendingJobs []aursir4go.AurSirRequest
 }
 
 type ImportAdded struct {
@@ -99,6 +99,6 @@ type ReqRegistered struct {
 type ResRegistered struct {
 	Importer []string
 	IsChainCall bool
-	ChainCall AurSir4Go.ChainCall
+	ChainCall aursir4go.ChainCall
 	ChainCallImportId string
 }

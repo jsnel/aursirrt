@@ -2,7 +2,10 @@ package storagecore
 
 import (
 	"log"
-	"github.com/joernweissenborn/AurSir4Go"
+	"github.com/joernweissenborn/aursir4go"
+	"github.com/joernweissenborn/aursirrt/config"
+	"path"
+	"os"
 )
 
 type StorageCoreAgent struct {
@@ -11,12 +14,28 @@ type StorageCoreAgent struct {
 	storageCore StorageCore
 }
 
-func (sca *StorageCoreAgent) Launch() {
+func (sca *StorageCoreAgent) Launch(cfg config.RtConfig) {
 
 	sca.read = make(chan StorageRequestItem)
 	sca.write = make(chan StorageRequestItem)
 
-	sca.storageCore.init()
+	nodeid := cfg.GetConfigItem("NodeId")
+	if nodeid == nil {
+		log.Println("StorageCore NodeId is not found, setting")
+		nodeid = generateUuid()
+		cfg.SetConfigItem("NodeId",nodeid)
+	}
+	log.Println("StorageCore NodeId is",nodeid)
+	dbpath := cfg.GetConfigItem("DatabasePath")
+	if dbpath == nil {
+		cwd, _ := os.Getwd()
+		dbpath = path.Join(cwd,"Database")
+		log.Println("StorageCore DatabasePath is not found, setting")
+
+		cfg.SetConfigItem("DatabasePath",dbpath)
+	}
+	log.Println("StorageCore DatabasePath is",dbpath)
+	sca.storageCore.init(nodeid.(string),dbpath.(string))
 
 	go sca.listen()
 
@@ -108,7 +127,7 @@ func (sca StorageCoreAgent) doread(req StorageRequestItem) StorageReply{
 	case GetAppKey:
 		kv := sca.storageCore.getKeyVertex(request.KeyName)
 		if kv == nil {return ReadFail{}}
-		k, _ :=kv.Properties.(AurSir4Go.AppKey)
+		k, _ :=kv.Properties.(aursir4go.AppKey)
 		return k
 
 	default:

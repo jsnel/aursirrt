@@ -1,6 +1,6 @@
 package core
 import (
-	"github.com/joernweissenborn/AurSir4Go"
+	"github.com/joernweissenborn/aursir4go"
 )
 
 
@@ -9,6 +9,6 @@ type AppMessage struct {
 
 	SenderUUID string //ID of the sending app
 
-	AppMsg AurSir4Go.AppMessage
+	AppMsg aursir4go.AppMessage
 
 }

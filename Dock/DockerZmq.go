@@ -3,7 +3,7 @@ package dock
 import (
 	"log"
 	"github.com/joernweissenborn/aursirrt/core"
-	"github.com/joernweissenborn/AurSir4Go"
+	"github.com/joernweissenborn/aursir4go"
 	zmq "github.com/pebbe/zmq4"
 
 
@@ -54,14 +54,14 @@ func (dzmq DockerZmq) listen(skt *zmq.Socket) {
 		msgtype,err := strconv.ParseInt(msg[1],10,64)
 		if err ==nil{
 
-			if msgtype == AurSir4Go.DOCK{
+			if msgtype == aursir4go.DOCK{
 				c := make(chan core.AppMessage )
 
 				dzmq.regChan <- registerDockedApp{senderId, c}
 				go dzmq.openConnection(msg[4],c)
 			}
 			encmsg := []byte(msg[3])
-			dzmq.msgChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{msgtype,msg[2],&encmsg}}
+			dzmq.msgChan <- core.AppMessage{senderId,aursir4go.AppMessage{msgtype,msg[2],&encmsg}}
 		}
 	}
 	}

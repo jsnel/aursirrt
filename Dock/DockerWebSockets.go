@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"io"
 	"strconv"
-	"github.com/joernweissenborn/AurSir4Go"
+	"github.com/joernweissenborn/aursir4go"
 )
 
 type DockerWebSockets struct {
@@ -59,34 +59,34 @@ func (dws DockerWebSockets) listen(ws *websocket.Conn){
 		senderId :=ws.RemoteAddr().String()
 		if err == io.EOF {
 			log.Println("DockerWebsockets got EOF on client", senderId)
-			dws.appInChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{AurSir4Go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
 			return
 		} else if err != nil {
 			log.Println("DockerWebsockets got error on client %x:", ws.RemoteAddr(), err)
-			dws.appInChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{AurSir4Go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
 			return
 		}
 		msgCodec, err := receiveMsg(ws)
 		if err == io.EOF {
 			log.Println("DockerWebsockets got EOF on client", ws.RemoteAddr())
-			dws.appInChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{AurSir4Go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
 			closed <- struct{}{}
 			return
 		} else if err != nil {
 			log.Println("DockerWebsockets got error on client %x:", ws.RemoteAddr(), err)
-			dws.appInChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{AurSir4Go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
 			return
 		}
 		msgBytes, err := receiveMsg(ws)
 		if err == io.EOF {
 			log.Println("DockerWebsockets got EOF on client", ws.RemoteAddr())
-			dws.appInChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{AurSir4Go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
 			closed <- struct{}{}
 			return
 		} else if err != nil {
 			closed <- struct{}{}
 			log.Println("DockerWebsockets got error on client %x:", ws.RemoteAddr(), err)
-			dws.appInChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{AurSir4Go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
 
 			return
 		}
@@ -96,7 +96,7 @@ func (dws DockerWebSockets) listen(ws *websocket.Conn){
 			return
 		}
 
-		if  msgType==AurSir4Go.DOCK{
+		if  msgType==aursir4go.DOCK{
 			go dws.openConnection(ws,closed)
 		}
 
@@ -115,7 +115,7 @@ func (dws DockerWebSockets) processMsg(senderId string,msgType int64,msgCodec *[
 
 	codec := string((*msgCodec))
 
-	dws.appInChan <- core.AppMessage{senderId,AurSir4Go.AppMessage{msgType,codec,msgBytes}}
+	dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{msgType,codec,msgBytes}}
 
 
 }

@@ -1,14 +1,14 @@
 package storagecore
 
 import (
-	"github.com/joernweissenborn/AurSir4Go"
+	"github.com/joernweissenborn/aursir4go"
 	PropertyGraph "github.com/joernweissenborn/propertygraph2go"
 	uuid "github.com/nu7hatch/gouuid"
 	"log"
 )
 
 type StorageCore struct {
-	graph *PropertyGraph.PropertyGraph
+	graph *PropertyGraph.SemiPersistentGraph
 	root  *PropertyGraph.Vertex
 }
 
@@ -23,11 +23,19 @@ const (
 	callchain_edge = "CHAINCALL"
 )
 
-func (sc *StorageCore) init() {
+func (sc *StorageCore) init(nodeId, dbpath string ) {
+	var err error
+	sc.graph, err = PropertyGraph.NewSemiPersistent(dbpath)
 
-	sc.graph = PropertyGraph.New()
+	if err != nil {
+		panic(err)
+	}
 
-	sc.root = sc.graph.CreateVertex(generateUuid(), nil)
+	sc.root = sc.graph.GetVertex(nodeId)
+	if sc.root == nil {
+		log.Println("StorageCoe initializing node")
+		sc.graph.CreatePersistentVertex(nodeId,nil)
+	}
 
 }
 
@@ -386,8 +394,7 @@ func (sc StorageCore) getAllImExports(app *PropertyGraph.Vertex) []*PropertyGrap
 
 func (sc StorageCore) registerApp(req RegisterAppRequest) {
 
-	log.Println("Assinging ID to App:", req.AppName)
-
+	log.Println("Assinging ID to App",req.AppName,"->", string(req.Id))
 	sc.graph.CreateVertex(string(req.Id), req.AppName)
 
 }
@@ -398,11 +405,9 @@ func (sc StorageCore) removeApp(req RemoveAppRequest) AppRemoved {
 	a := sc.graph.GetVertex(req.Id)
 	for _, e := range sc.getAllImExports(a) {
 		for _, impl := range e.Outgoing {
-			log.Println("StorageCore disconnecting app", impl.Head.Id)
 
 			if iscc,_:= sc.isChainCall(impl.Head);impl.Label == implements_edge && !iscc {
 				log.Print("StorageCore disconnecting app", req.Id)
-				log.Println(" from", impl.Head.Id)
 				discApps[impl.Head.Id] = sc.getImportApp(impl.Head).Id
 			}
 		}
@@ -414,7 +419,7 @@ func (sc StorageCore) removeApp(req RemoveAppRequest) AppRemoved {
 	return AppRemoved{discApps}
 }
 
-func (sc StorageCore) registerKey(k AurSir4Go.AppKey) *PropertyGraph.Vertex {
+func (sc StorageCore) registerKey(k aursir4go.AppKey) *PropertyGraph.Vertex {
 
 	log.Println("StorageCore Registering AppKey:", k.ApplicationKeyName)
 
@@ -438,7 +443,7 @@ func (sc StorageCore) registerKey(k AurSir4Go.AppKey) *PropertyGraph.Vertex {
 
 func (sc StorageCore) getKeyVertex(k string) (*PropertyGraph.Vertex) {
 	for _, kv := range sc.root.Outgoing {
-		key, _ := kv.Head.Properties.(AurSir4Go.AppKey)
+		key, _ := kv.Head.Properties.(aursir4go.AppKey)
 		if key.ApplicationKeyName == k {
 			return kv.Head
 		}
@@ -468,10 +473,10 @@ func (sc StorageCore) addResult(arr AddResRequest) ResRegistered {
 	}
 
 	ischaincall , ccv:= sc.hasChainCall(job)
-	var chaincall AurSir4Go.ChainCall
+	var chaincall aursir4go.ChainCall
 	chaincallimportid := ""
 	if ischaincall {
-		chaincall, _ = ccv.Properties.(AurSir4Go.ChainCall)
+		chaincall, _ = ccv.Properties.(aursir4go.ChainCall)
 		for _,e := range ccv.Incoming {
 			if e.Label == awaiting_job_edge {
 				chaincallimportid= e.Tail.Id
@@ -480,18 +485,19 @@ func (sc StorageCore) addResult(arr AddResRequest) ResRegistered {
 
 	}
 
-	if req.CallType == AurSir4Go.ONE2ONE || req.CallType == AurSir4Go.ONE2MANY {
+	if req.CallType == aursir4go.ONE2ONE || req.CallType == aursir4go.ONE2MANY {
+
 		jobapp := sc.getRequestApp(job)
-		log.Println("StorageCore error registering result, requesting app not found")
 		if jobapp != nil {
 			sc.graph.RemoveVertex(job.Id)
 			return ResRegistered{[]string{jobapp.Id},ischaincall,chaincall,chaincallimportid}
 		}
+		log.Println("StorageCore error registering result, requesting app not found")
 	}
 
 	sc.graph.RemoveVertex(job.Id)
 
-	if req.CallType == AurSir4Go.MANY2ONE || req.CallType == AurSir4Go.MANY2MANY {
+	if req.CallType == aursir4go.MANY2ONE || req.CallType == aursir4go.MANY2MANY {
 		importer := []string{}
 
 		for _, imp := range sc.getListener(exp) {
@@ -513,12 +519,12 @@ func (sc StorageCore) getRequestApp(j *PropertyGraph.Vertex) *PropertyGraph.Vert
 	return nil
 }
 
-func (sc StorageCore) getPendingRequests(key *PropertyGraph.Vertex) []AurSir4Go.AurSirRequest {
+func (sc StorageCore) getPendingRequests(key *PropertyGraph.Vertex) []aursir4go.AurSirRequest {
 
-	requests := []AurSir4Go.AurSirRequest{}
+	requests := []aursir4go.AurSirRequest{}
 	for _, r := range sc.getRequests(key) {
 		if !sc.requestsProcessed(r) {
-			requests = append(requests, r.Properties.(AurSir4Go.AurSirRequest))
+			requests = append(requests, r.Properties.(aursir4go.AurSirRequest))
 		}
 	}
 	return requests
@@ -637,7 +643,7 @@ func (sc StorageCore) addRequest(arr AddReqRequest) []string {
 	}
 
 
-	if req.CallType == AurSir4Go.ONE2ONE || req.CallType == AurSir4Go.MANY2ONE {
+	if req.CallType == aursir4go.ONE2ONE || req.CallType == aursir4go.MANY2ONE {
 		f, export := sc.isExported(imp)
 		if f {
 			sc.graph.CreateEdge(generateUuid(), doing_job_edge, rv, export, nil)
@@ -695,7 +701,7 @@ func (sc StorageCore) addCallChain(accr AddCallChainRequest)[]string{
 
 	}
 
-	if req.OriginRequest.CallType == AurSir4Go.ONE2ONE || req.OriginRequest.CallType == AurSir4Go.MANY2ONE {
+	if req.OriginRequest.CallType == aursir4go.ONE2ONE || req.OriginRequest.CallType == aursir4go.MANY2ONE {
 		f, export := sc.isExported(imp)
 		if f {
 			sc.graph.CreateEdge(generateUuid(), doing_job_edge, rv, export, nil)
