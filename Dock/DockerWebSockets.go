@@ -55,7 +55,6 @@ func (dws DockerWebSockets) listen(ws *websocket.Conn){
 		eba := []byte("{}")
 
 		msgtype, err := receiveMsg(ws)
-
 		senderId :=ws.RemoteAddr().String()
 		if err == io.EOF {
 			log.Println("DockerWebsockets got EOF on client", senderId)
@@ -90,7 +89,10 @@ func (dws DockerWebSockets) listen(ws *websocket.Conn){
 
 			return
 		}
-		msgType, err := strconv.ParseInt(string((*msgtype)[0]),10,8)
+		msgType, err := strconv.ParseInt(string((*msgtype)),10,64)
+		log.Println("DockerWebsockets got invalid Message on client:", msgType)
+		log.Println("DockerWebsockets got invalid Message on client:", err)
+
 		if err != nil {
 			log.Println("DockerWebsockets got invalid Message on client:", ws.RemoteAddr())
 			return

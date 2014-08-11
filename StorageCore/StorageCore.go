@@ -125,7 +125,7 @@ func (sc StorageCore) addExport(expReq AddExportRequest) ExportAdded {
 	log.Println("StorageCore Linking App as exporter with export id",exp.Id)
 
 	for _, imp := range sc.getKeyImport(key) {
-			sc.linkExporterToListen(imp)
+		sc.linkExporterToListen(imp)
 	}
 	//no exports are going offline due to export adding
 	return ExportAdded{exp.Id, sc.getExportedImportsForKey(key),map[string]string{}, sc.getPendingRequests(key)}
@@ -145,7 +145,7 @@ func (sc StorageCore) getExportedImportsForKey(key *PropertyGraph.Vertex) map[st
 	exported := map[string]string{}
 
 	for _, imp := range key.Incoming {
-			if cc,_:= sc.isChainCall(imp.Tail);!cc && imp.Label == import_edge  {
+		if cc,_:= sc.isChainCall(imp.Tail);!cc && imp.Label == import_edge  {
 			if ok, _ := sc.isExported(imp.Tail); ok {
 				exported[imp.Tail.Id] = sc.getImportApp(imp.Tail).Id
 			}
@@ -403,7 +403,11 @@ func (sc StorageCore) removeApp(req RemoveAppRequest) AppRemoved {
 	log.Println("StorageCore Removing app", req.Id)
 	discApps := map[string]string{}
 	a := sc.graph.GetVertex(req.Id)
-	for _, e := range sc.getAllImExports(a) {
+	if a == nil {
+		log.Println("StorageCore error removing app %d, App does not exist", req.Id)
+		return AppRemoved{}
+	}
+	for _, e := range sc.getAllExports(a) {
 		for _, impl := range e.Outgoing {
 
 			if iscc,_:= sc.isChainCall(impl.Head);impl.Label == implements_edge && !iscc {
@@ -412,6 +416,13 @@ func (sc StorageCore) removeApp(req RemoveAppRequest) AppRemoved {
 			}
 		}
 		sc.graph.RemoveVertex(e.Id)
+	}
+
+	for _,i := range sc.getAllImports(a){
+		for _, lf := range sc.graph.GetOutgoingEdgesByLabel(i.Id,listen_edge){
+			sc.graph.RemoveVertex(lf.Head.Id)
+		}
+		sc.graph.RemoveVertex(i.Id)
 	}
 
 	sc.graph.RemoveVertex(req.Id)
@@ -451,62 +462,64 @@ func (sc StorageCore) getKeyVertex(k string) (*PropertyGraph.Vertex) {
 	return nil
 }
 
-func (sc StorageCore) addResult(arr AddResRequest) ResRegistered {
+func (sc StorageCore) addResult(arr AddResRequest) (result ResRegistered) {
 	req := arr.Req
 	app := sc.graph.GetVertex(arr.AppId)
 	if app == nil {
 		log.Println("StorageCore error registering result, unknown app")
-		return ResRegistered{}
+		return
 	}
 
 
 	exp := sc.graph.GetVertex(req.ExportId)
 	if exp == nil {
 		log.Println("StorageCore error registering result, key not imported by app")
-		return ResRegistered{}
+		return
 	}
+	if arr.Req.Uuid !=""{
+		job := sc.graph.GetVertex(arr.Req.Uuid)
+		if job == nil {
+			log.Println("StorageCore error registering result with job")
+			return
+		}
+		var ccv *PropertyGraph.Vertex
+		result.IsChainCall, ccv = sc.hasChainCall(job)
 
-	job := sc.graph.GetVertex(arr.Req.Uuid)
-	if job == nil {
-		log.Println("StorageCore error registering result, job not found")
-		return ResRegistered{}
-	}
-
-	ischaincall , ccv:= sc.hasChainCall(job)
-	var chaincall aursir4go.ChainCall
-	chaincallimportid := ""
-	if ischaincall {
-		chaincall, _ = ccv.Properties.(aursir4go.ChainCall)
-		for _,e := range ccv.Incoming {
-			if e.Label == awaiting_job_edge {
-				chaincallimportid= e.Tail.Id
+		if result.IsChainCall {
+			result.ChainCall, _ = ccv.Properties.(aursir4go.ChainCall)
+			for _, e := range ccv.Incoming {
+				if e.Label == awaiting_job_edge {
+					result.ChainCallImportId = e.Tail.Id
+				}
 			}
 		}
 
-	}
+		if req.CallType == aursir4go.ONE2ONE || req.CallType == aursir4go.ONE2MANY {
 
-	if req.CallType == aursir4go.ONE2ONE || req.CallType == aursir4go.ONE2MANY {
-
-		jobapp := sc.getRequestApp(job)
-		if jobapp != nil {
-			sc.graph.RemoveVertex(job.Id)
-			return ResRegistered{[]string{jobapp.Id},ischaincall,chaincall,chaincallimportid}
+			jobapp := sc.getRequestApp(job)
+			if jobapp != nil {
+				sc.graph.RemoveVertex(job.Id)
+				result.Importer = []string{jobapp.Id}
+				return
+			}
+			log.Println("StorageCore error registering result, requesting app not found")
 		}
-		log.Println("StorageCore error registering result, requesting app not found")
-	}
 
-	sc.graph.RemoveVertex(job.Id)
+		sc.graph.RemoveVertex(job.Id)
+	}
 
 	if req.CallType == aursir4go.MANY2ONE || req.CallType == aursir4go.MANY2MANY {
-		importer := []string{}
-
+		result.Importer = []string{}
 		for _, imp := range sc.getListener(exp) {
-			importer = append(importer, imp.Id)
+			result.Importer = append(result.Importer, imp.Id)
 		}
-		return ResRegistered{importer,ischaincall,chaincall,chaincallimportid}
+		log.Println(req.FunctionName)
+		log.Println(result.Importer)
+
+		return
 	}
 
-	return  ResRegistered{[]string{},ischaincall,chaincall,chaincallimportid}
+	return
 }
 
 // getRequestApp retrieves the app waiting for a job. Returns nil if job is MANY2..
@@ -629,6 +642,7 @@ func (sc StorageCore) getListeningApp(lf *PropertyGraph.Vertex) *PropertyGraph.V
 
 func (sc StorageCore) addRequest(arr AddReqRequest) []string {
 	req := arr.Req
+	log.Println("StorageCore registering request",arr.Req.Uuid)
 
 	imp := sc.graph.GetVertex(req.ImportId)
 	if imp == nil {
@@ -646,9 +660,12 @@ func (sc StorageCore) addRequest(arr AddReqRequest) []string {
 	if req.CallType == aursir4go.ONE2ONE || req.CallType == aursir4go.MANY2ONE {
 		f, export := sc.isExported(imp)
 		if f {
+			log.Println("StorageCore found exporter for request",export.Id)
 			sc.graph.CreateEdge(generateUuid(), doing_job_edge, rv, export, nil)
 			return []string{sc.getExportApp(export).Id}
 		}
+		log.Println("StorageCore could not find exporter for request",req.Uuid)
+
 	}
 	return nil
 }
@@ -687,7 +704,6 @@ func (sc StorageCore) addCallChain(accr AddCallChainRequest)[]string{
 		sc.graph.CreateEdge(generateUuid(), callchain_edge, cv, prev, nil)
 		prev = cv
 	}
-
 	if req.FinalImportId != ""{
 		fimp := sc.graph.GetVertex(req.FinalImportId)
 		if fimp == nil {

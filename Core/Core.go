@@ -34,7 +34,7 @@ func (c core) routeIncomingAppMsg(appInChannel chan AppMessage) {
 	for AppMessage := range appInChannel {
 
 		aursirMessage, err := AppMessage.AppMsg.Decode()
-
+		log.Println("DEBUG",AppMessage)
 		if err == nil {
 
 			switch aursirMessage := aursirMessage.(type) {
@@ -85,10 +85,15 @@ func (c core) callChain(senderId string,ccmsg aursir4go.AurSirCallChain) {
 	ok := true
 	insane := []int64{}
 	for i,call := range ccmsg.CallChain {
-		 if !c.chainChecker(oak,ofn,call.AppKeyName,call.FunctionName,call.ArgumentMap){
+		tak := call.AppKeyName
+		tfn := call.FunctionName
+		 if !c.chainChecker(oak,ofn,tak,tfn,call.ArgumentMap){
 			 ok = false
 			 insane = append(insane,int64(i))
 		 }
+
+		oak = tak
+		ofn = tfn
 	}
 	log.Println("CALLCHAIN is vailid:",ok, insane)
 
@@ -110,7 +115,7 @@ func (c core) callChain(senderId string,ccmsg aursir4go.AurSirCallChain) {
 
 func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap map[string]string) bool {
 	oak, f := (c.storageAgent.Read(storagecore.GetAppKey{orgAppKey})).(aursir4go.AppKey)
-	log.Println(oak)
+	log.Println(orgFun)
 	if !f {
 		return false
 	}
@@ -128,19 +133,23 @@ func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap 
 			f = true
 		}
 	}
+	log.Println(ofn)
 
 	if !f {return false}
+
 	tmp := map[string]int{}
 		for input, output := range paramap {
 			f = false
 			for _, out := range ofn.Output {
+				log.Println(output)
+				log.Println(out.Name)
 				if out.Name == output {
 					f = true
 					tmp[input] = out.Type
 				}
-				if !f {return false}
 			}
 		}
+	if !f {return false}
 
 	var tfn aursir4go.Function
 	f = false
@@ -150,14 +159,20 @@ func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap 
 			f = true
 		}
 	}
+	log.Println(tfn,f)
 
 	if !f {return false}
 	for _,in :=range tfn.Input {
 		t,f := tmp[in.Name]
+		log.Println(t,f)
+		log.Println(tmp)
+		log.Println(in.Name)
 		if !f || t != in.Type {
 			return false
 		}
 	}
+	log.Println(f)
+
 	return true
 }
 
@@ -243,6 +258,8 @@ func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult
 	resultParameter := tmp.(map[string]interface {})
 	requestParameter := map[string]interface {}{}
 		for target, origin := range cc.ArgumentMap {
+			log.Println(origin)
+			log.Println(resultParameter[origin])
 			requestParameter[target] = resultParameter[origin]
 		}
 
@@ -261,7 +278,8 @@ func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult
 		false,
 		false,
 		*req}
-
+	log.Println("ChainCalling",request)
+	log.Println("ChainCalling",string(request.Request))
 	reqReg, ok := c.storageAgent.Write(storagecore.AddReqRequest{senderId,request}).(storagecore.ReqRegistered)
 	log.Println(ok,reqReg)
 	if ok{
