@@ -8,6 +8,8 @@ import (
 	"github.com/joernweissenborn/aursirrt/storagecore"
 	"log"
 	"github.com/joernweissenborn/aursirrt/config"
+	"time"
+	"github.com/joernweissenborn/aursirrt/datastorage"
 )
 
 func Launch(AppInChannel, AppOutChannel chan AppMessage,cfg config.RtConfig) {
@@ -15,6 +17,10 @@ func Launch(AppInChannel, AppOutChannel chan AppMessage,cfg config.RtConfig) {
 	log.Println("Core Launching")
 
 	var c core
+
+	c.datastorage = make(chan interface {})
+
+	go datastorage.Open(cfg,c.datastorage)
 
 	c.storageAgent.Launch(cfg)
 
@@ -27,6 +33,7 @@ func Launch(AppInChannel, AppOutChannel chan AppMessage,cfg config.RtConfig) {
 type core struct {
 	storageAgent storagecore.StorageCoreAgent
 	appOutChannel chan AppMessage
+	datastorage chan interface {}
 }
 
 func (c core) routeIncomingAppMsg(appInChannel chan AppMessage) {
@@ -229,6 +236,15 @@ func (c core) stopListen(senderId string, slmsg aursir4go.AurSirStopListenMessag
 
 func (c core) result(senderId string, rmsg aursir4go.AurSirResult) {
 	log.Println("Processing RESULT request from", senderId)
+	if rmsg.Persistent {
+		var request aursir4go.AurSirRequest
+		getReq := c.storageAgent.Read(storagecore.GetRequest{rmsg.Uuid})
+		if _,f := getReq.(storagecore.ReadFail);!f{
+			request = getReq.(aursir4go.AurSirRequest)
+		}
+		go c.persistResult(request,rmsg)
+	}
+
 	reply := c.storageAgent.Write(storagecore.AddResRequest{senderId,rmsg})
 	resReg, ok := reply.(storagecore.ResRegistered)
 
@@ -243,6 +259,15 @@ func (c core) result(senderId string, rmsg aursir4go.AurSirResult) {
 	if ok && resReg.IsChainCall{
 		c.createChainCall(senderId,rmsg,resReg.ChainCall,resReg.ChainCallImportId)
 	}
+}
+
+func (c core) persistResult(req aursir4go.AurSirRequest, res aursir4go.AurSirResult) {
+	answer := make(chan string)
+	c.datastorage <- datastorage.CommitRequest{answer,datastorage.CommitData{&req,&res}}
+	path := <-answer
+	res.IsFile = true
+	res.Result = []byte(path)
+	c.storageAgent.Write(storagecore.AddPersistentResultRequest{res})
 }
 
 func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult,cc aursir4go.ChainCall,ccImportId string){
@@ -274,12 +299,14 @@ func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult
 		cc.Tags,
 		cc.ChainCallId,
 		ccImportId,
+		time.Now(),
 		prevResult.Codec,
 		false,
 		false,
+		"",
 		*req}
-	log.Println("ChainCalling",request)
-	log.Println("ChainCalling",string(request.Request))
+//	log.Println("ChainCalling",request)
+//	log.Println("ChainCalling",string(request.Request))
 	reqReg, ok := c.storageAgent.Write(storagecore.AddReqRequest{senderId,request}).(storagecore.ReqRegistered)
 	log.Println(ok,reqReg)
 	if ok{

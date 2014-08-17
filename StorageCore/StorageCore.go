@@ -5,6 +5,7 @@ import (
 	PropertyGraph "github.com/joernweissenborn/propertygraph2go"
 	uuid "github.com/nu7hatch/gouuid"
 	"log"
+	"encoding/gob"
 )
 
 type StorageCore struct {
@@ -21,10 +22,15 @@ const (
 	doing_job_edge    = "DOING_JOB"
 	listen_edge       = "LISTEN"
 	callchain_edge = "CHAINCALL"
+	result_edge = "HAS_RESULT"
 )
 
 func (sc *StorageCore) init(nodeId, dbpath string ) {
 	var err error
+
+	gob.Register(aursir4go.AppKey{})
+	gob.Register(aursir4go.AurSirResult{})
+
 	sc.graph, err = PropertyGraph.NewSemiPersistent(dbpath)
 
 	if err != nil {
@@ -136,6 +142,13 @@ func (sc StorageCore) registerTags(Tags []string, key *PropertyGraph.Vertex)[]*P
 	tags := make([]*PropertyGraph.Vertex, len(Tags))
 	for i, t := range Tags {
 		tags[i] = sc.registerTag(t, key)
+	}
+	return tags
+}
+func (sc StorageCore) registerTagsPersistent(Tags []string, key *PropertyGraph.Vertex)[]*PropertyGraph.Vertex{
+	tags := make([]*PropertyGraph.Vertex, len(Tags))
+	for i, t := range Tags {
+		tags[i] = sc.registerTagPersistent(t, key)
 	}
 	return tags
 }
@@ -348,6 +361,18 @@ func (sc StorageCore) registerTag(t string, k *PropertyGraph.Vertex) *PropertyGr
 	return tv
 }
 
+func (sc StorageCore) registerTagPersistent(t string, k *PropertyGraph.Vertex) *PropertyGraph.Vertex {
+
+	tv := sc.getTag(t, k)
+	if tv == nil {
+		tv = sc.graph.CreatePersistentVertex(generateUuid(), t)
+		sc.graph.CreateEdge(generateUuid(), tag_edge, tv, k, nil)
+	} else {
+		sc.graph.PersistVertex(tv.Id)
+	}
+	return tv
+}
+
 func (sc StorageCore) getTag(t string, key *PropertyGraph.Vertex) *PropertyGraph.Vertex {
 
 	for _, kv := range key.Outgoing {
@@ -439,11 +464,15 @@ func (sc StorageCore) registerKey(k aursir4go.AppKey) *PropertyGraph.Vertex {
 	kv := sc.getKeyVertex(k.ApplicationKeyName)
 
 	if kv != nil {
-		log.Println("StorageCore Aborting register, key already known")
-		return kv
+		if aursir4go.HashAppKey(k) != aursir4go.HashAppKey(kv.Properties.(aursir4go.AppKey)){
+			log.Println("STORAGECORE", "Updating key with new version")
+		} else {
+			log.Println("STORAGECORE", "Aborting register, key already known")
+			return kv
+		}
 	}
 
-	kv = sc.graph.CreateVertex(generateUuid(), k)
+	kv = sc.graph.CreatePersistentVertex(generateUuid(), k)
 
 	sc.graph.CreateEdge(generateUuid(), "KNOWN_APPKEY", kv, sc.root, nil)
 
@@ -453,6 +482,7 @@ func (sc StorageCore) registerKey(k aursir4go.AppKey) *PropertyGraph.Vertex {
 }
 
 func (sc StorageCore) getKeyVertex(k string) (*PropertyGraph.Vertex) {
+	log.Println(sc.root)
 	for _, kv := range sc.root.Outgoing {
 		key, _ := kv.Head.Properties.(aursir4go.AppKey)
 		if key.ApplicationKeyName == k {
@@ -520,6 +550,27 @@ func (sc StorageCore) addResult(arr AddResRequest) (result ResRegistered) {
 	}
 
 	return
+}
+
+func (sc StorageCore) addPersistentResult(appr AddPersistentResultRequest) {
+	result := appr.Req
+
+	key := sc.getKeyVertex(result.AppKeyName)
+	if key == nil {
+		log.Println("STORAGECORE","Cannot register persistent result, appkey not found",result.AppKeyName)
+		return
+	}
+
+	tags := sc.registerTagsPersistent(result.Tags, key)
+
+	rv := sc.graph.CreatePersistentVertex(result.Uuid,result)
+
+	sc.graph.CreateEdge(generateUuid(),result_edge,rv,key,nil)
+
+	for _, tag := range tags {
+		sc.graph.CreateEdge(generateUuid(),tag_edge,tag,rv,nil)
+	}
+
 }
 
 // getRequestApp retrieves the app waiting for a job. Returns nil if job is MANY2..
@@ -650,6 +701,7 @@ func (sc StorageCore) addRequest(arr AddReqRequest) []string {
 		return nil
 	}
 
+	//Check if the request vertex already exist. This is the case for chaincalls, where import and request are the same edge
 	rv := sc.graph.GetVertex(req.Uuid)
 	if rv == nil {
 		rv = sc.graph.CreateVertex(req.Uuid, req)

@@ -12,11 +12,11 @@ import (
 
 type DockerWebSockets struct {
 	appInChan chan core.AppMessage
-	regChan chan registerDockedApp
+	regChan chan interface {}
 	port string
 }
 
-func (dws DockerWebSockets)	Launch(appInChan chan core.AppMessage, regApp chan registerDockedApp){
+func (dws DockerWebSockets)	Launch(appInChan chan core.AppMessage, regApp chan interface {}){
 
 	log.Println("DockerWebsockets Launching")
 

@@ -50,6 +50,10 @@ type AddResRequest struct {
 	Req aursir4go.AurSirResult
 }
 
+type AddPersistentResultRequest struct {
+	Req aursir4go.AurSirResult
+}
+
 type AddCallChainRequest struct {
 	AppId string
 	Req aursir4go.AurSirCallChain
@@ -63,6 +67,10 @@ type ListenRequest struct {
 
 type GetAppKey struct {
 	KeyName string
+}
+
+type GetRequest struct {
+	Uuid string
 }
 
 //StorageReply is the base interfaces for all replies to storageRequests

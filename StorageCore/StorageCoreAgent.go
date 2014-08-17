@@ -108,7 +108,9 @@ func (sca StorageCoreAgent) dowrite(req StorageRequestItem) StorageReply {
 	case ListenRequest:
 		sca.storageCore.addFuncListen(request)
 		return WriteOk{}
-
+	case AddPersistentResultRequest:
+		sca.storageCore.addPersistentResult(request)
+		return WriteOk{}
 	case UpdateExportRequest:
 		return sca.storageCore.updateExport(request)
 	case UpdateImportRequest:
@@ -129,6 +131,12 @@ func (sca StorageCoreAgent) doread(req StorageRequestItem) StorageReply{
 		if kv == nil {return ReadFail{}}
 		k, _ :=kv.Properties.(aursir4go.AppKey)
 		return k
+
+	case GetRequest:
+		rv := sca.storageCore.graph.GetVertex(request.Uuid)
+		if rv == nil {return ReadFail{}}
+		r, _ :=rv.Properties.(aursir4go.AurSirRequest)
+		return r
 
 	default:
 		return ReadFail{}
