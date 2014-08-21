@@ -41,7 +41,7 @@ func (c core) routeIncomingAppMsg(appInChannel chan AppMessage) {
 	for AppMessage := range appInChannel {
 
 		aursirMessage, err := AppMessage.AppMsg.Decode()
-		log.Println("DEBUG",AppMessage)
+		//log.Println("DEBUG",AppMessage)
 		if err == nil {
 
 			switch aursirMessage := aursirMessage.(type) {
@@ -122,7 +122,7 @@ func (c core) callChain(senderId string,ccmsg aursir4go.AurSirCallChain) {
 
 func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap map[string]string) bool {
 	oak, f := (c.storageAgent.Read(storagecore.GetAppKey{orgAppKey})).(aursir4go.AppKey)
-	log.Println(orgFun)
+	//log.Println(orgFun)
 	if !f {
 		return false
 	}
@@ -130,7 +130,7 @@ func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap 
 	if !f  {
 		return false
 	}
-	log.Println(tak)
+	//log.Println(tak)
 
 	var ofn aursir4go.Function
 	f = false
@@ -140,7 +140,7 @@ func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap 
 			f = true
 		}
 	}
-	log.Println(ofn)
+	//log.Println(ofn)
 
 	if !f {return false}
 
@@ -148,8 +148,8 @@ func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap 
 		for input, output := range paramap {
 			f = false
 			for _, out := range ofn.Output {
-				log.Println(output)
-				log.Println(out.Name)
+				//log.Println(output)
+				//log.Println(out.Name)
 				if out.Name == output {
 					f = true
 					tmp[input] = out.Type
@@ -166,19 +166,19 @@ func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap 
 			f = true
 		}
 	}
-	log.Println(tfn,f)
+	//log.Println(tfn,f)
 
 	if !f {return false}
 	for _,in :=range tfn.Input {
 		t,f := tmp[in.Name]
-		log.Println(t,f)
-		log.Println(tmp)
-		log.Println(in.Name)
+		//log.Println(t,f)
+		//log.Println(tmp)
+		//log.Println(in.Name)
 		if !f || t != in.Type {
 			return false
 		}
 	}
-	log.Println(f)
+	//log.Println(f)
 
 	return true
 }
@@ -200,7 +200,7 @@ func (c core) updateExport(senderId string,uemsg aursir4go.AurSirUpdateExportMes
 	log.Println("Processing UPDATE_EXPORT request from", senderId)
 	reply := c.storageAgent.Write(storagecore.UpdateExportRequest{uemsg})
 	export, ok := reply.(storagecore.ExportAdded)
-	log.Println(export)
+	//log.Println(export)
 	if ok {
 		for imp, appid := range export.ConnectedImports {
 			var em aursir4go.AppMessage
@@ -279,12 +279,12 @@ func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult
 	var tmp interface {}
 
 	codec.Decode(&prevResult.Result,&tmp)
-	log.Println(string(prevResult.Result),tmp)
+	//log.Println(string(prevResult.Result),tmp)
 	resultParameter := tmp.(map[string]interface {})
 	requestParameter := map[string]interface {}{}
 		for target, origin := range cc.ArgumentMap {
-			log.Println(origin)
-			log.Println(resultParameter[origin])
+			//log.Println(origin)
+			//log.Println(resultParameter[origin])
 			requestParameter[target] = resultParameter[origin]
 		}
 
@@ -308,7 +308,7 @@ func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult
 //	log.Println("ChainCalling",request)
 //	log.Println("ChainCalling",string(request.Request))
 	reqReg, ok := c.storageAgent.Write(storagecore.AddReqRequest{senderId,request}).(storagecore.ReqRegistered)
-	log.Println(ok,reqReg)
+	//log.Println(ok,reqReg)
 	if ok{
 		for _, exp := range reqReg.Exporter {
 			var rm aursir4go.AppMessage

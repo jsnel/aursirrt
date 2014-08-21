@@ -74,7 +74,6 @@ func (dzmq *DockerZmq) listen(skt *zmq.Socket) {
 					dzmq.closeConnection(senderId)
 
 				default:
-					log.Println("b")
 					encmsg := []byte(msg[3])
 					dzmq.msgChan <- core.AppMessage{senderId, aursir4go.AppMessage{msgtype, msg[2], &encmsg}}
 
@@ -135,6 +134,7 @@ func (dzmq *DockerZmq)updPingListener() {
 			log.Fatal("DOCKERZMQ",err)
 		}
 		appid := string(buf[:rlen])
+		//log.Println("PING",appid)
 		go dzmq.CheckInAppPing(appid)
 	}
 }

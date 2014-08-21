@@ -482,7 +482,7 @@ func (sc StorageCore) registerKey(k aursir4go.AppKey) *PropertyGraph.Vertex {
 }
 
 func (sc StorageCore) getKeyVertex(k string) (*PropertyGraph.Vertex) {
-	log.Println(sc.root)
+	//log.Println(sc.root)
 	for _, kv := range sc.root.Outgoing {
 		key, _ := kv.Head.Properties.(aursir4go.AppKey)
 		if key.ApplicationKeyName == k {
@@ -543,8 +543,8 @@ func (sc StorageCore) addResult(arr AddResRequest) (result ResRegistered) {
 		for _, imp := range sc.getListener(exp) {
 			result.Importer = append(result.Importer, imp.Id)
 		}
-		log.Println(req.FunctionName)
-		log.Println(result.Importer)
+		//log.Println(req.FunctionName)
+		//log.Println(result.Importer)
 
 		return
 	}
