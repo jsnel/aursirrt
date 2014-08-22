@@ -8,6 +8,7 @@ import (
 	"os/signal"
 
 	"github.com/joernweissenborn/aursirrt/config"
+	"github.com/joernweissenborn/aursirrt/webserver"
 )
 
 func main() {
@@ -31,6 +32,8 @@ func main() {
 
 	//go debug("AIC",aic,aic1)
 	//go debug("AOC",aoc,aoc1)
+
+	go webserver.Launch(cfg)
 
 	core.Launch(aic, aoc, cfg)
 
