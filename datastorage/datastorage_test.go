@@ -27,7 +27,7 @@ func TestLogging(t *testing.T){
 	req.Request = []byte("{request}")
 	res.Result = []byte("{result}")
 	wd, _ := os.Getwd()
-	l.PersistData(wd,CommitData{req,res})
+	l.PersistData(wd,CommitData{&req,&res})
 
 
 }

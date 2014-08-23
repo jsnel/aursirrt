@@ -1,0 +1,31 @@
+language: go
+
+go:
+  - 1.2
+  - 1.3
+
+before_install:
+  - sudo apt-get update -y
+  - sudo apt-get install -y curl make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf
+
+install:
+  - curl -o ./zeromq.tar.gz http://download.zeromq.org/zeromq-4.0.4.tar.gz
+  - tar -C . -zxvf ./zeromq.tar.gz
+  - rm ./zeromq.tar.gz
+  - cd zeromq-4.0.4
+  - ./autogen.sh
+  - ./configure
+  - make
+  - sudo make install
+  - sudo ldconfig
+  - cd ..
+  - go get github.com/pebbe/zmq4
+  - go get github.com/joernweissenborn/aursirrt
+  - go build -a
+  - sudo ifconfig
+  - uname -a
+
+env: ZSYS_INTERFACE=lo
+
+script:
+ - go test -v github.com/joernweissenborn/aursir4go
