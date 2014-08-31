@@ -56,8 +56,9 @@ func (dzmq *DockerZmq) listen(skt *zmq.Socket) {
 			senderId := msg[0]
 
 
-			log.Println("ZMQAppDocker got message from", senderId)
 			msgtype, err := strconv.ParseInt(msg[1], 10, 64)
+			log.Println("ZMQAppDocker got message from", senderId)
+
 			if err == nil {
 
 				switch msgtype {
@@ -68,14 +69,12 @@ func (dzmq *DockerZmq) listen(skt *zmq.Socket) {
 					go dzmq.openConnection(senderId, msg[4], c)
 					go dzmq.AddAppPing(senderId)
 					encmsg := []byte(msg[3])
-					dzmq.msgChan <- core.AppMessage{senderId, aursir4go.AppMessage{msgtype, msg[2], &encmsg}}
+					dzmq.msgChan <- core.AppMessage{senderId, aursir4go.AppMessage{msgtype, msg[2], encmsg}}
 
-				case aursir4go.LEAVE:
-					dzmq.closeConnection(senderId)
 
 				default:
 					encmsg := []byte(msg[3])
-					dzmq.msgChan <- core.AppMessage{senderId, aursir4go.AppMessage{msgtype, msg[2], &encmsg}}
+					dzmq.msgChan <- core.AppMessage{senderId, aursir4go.AppMessage{msgtype, msg[2], encmsg}}
 
 				}
 			}
@@ -103,7 +102,7 @@ func (dzmq *DockerZmq) openConnection(id, port string, c chan core.AppMessage){
 
 		appmsg := msg.AppMsg
 		_,err := skt.SendMessage(
-			[]string{strconv.FormatInt(appmsg.MsgType,10),appmsg.MsgCodec,string(*appmsg.Msg)},0)
+			[]string{strconv.FormatInt(appmsg.MsgType,10),appmsg.MsgCodec,string(appmsg.Msg)},0)
 
 
 		if err != nil {
@@ -169,6 +168,6 @@ func (dzmq *DockerZmq) CheckAppLiveliness() {
 func (dzmq *DockerZmq) closeConnection(id string){
 	l := []byte("{}")
 	dzmq.RemoveAppPing(id)
-	dzmq.msgChan <- core.AppMessage{id,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&l}}
+	dzmq.msgChan <- core.AppMessage{id,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",l}}
 	dzmq.regChan <- ungisterDockedApp{id}
 }

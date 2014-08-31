@@ -12,7 +12,7 @@ type StorageRequest interface{}
 
 type RegisterAppRequest struct {
 	Id      string
-	AppName string
+	App aursir4go.AurSirDockMessage
 }
 
 type RemoveAppRequest struct {
@@ -102,10 +102,10 @@ type AppRemoved struct {
 }
 
 type ReqRegistered struct {
-	Exporter []string
+	Exporter map[string][]string
 }
 type ResRegistered struct {
-	Importer []string
+	Importer map[string][]string
 	IsChainCall bool
 	ChainCall aursir4go.ChainCall
 	ChainCallImportId string

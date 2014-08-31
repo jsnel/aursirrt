@@ -330,7 +330,7 @@ func (sc StorageCore) isExported(imp *PropertyGraph.Vertex) (bool, *PropertyGrap
 	return true, exps[0]
 }
 
-//getExportApp returns the app vertex to a gven export vertex
+//getExportApp returns the app vertex to a given export vertex
 func (sc StorageCore) getExportApp(exp *PropertyGraph.Vertex) *PropertyGraph.Vertex {
 	for _, e := range exp.Incoming {
 		if e.Label == export_edge {
@@ -419,8 +419,8 @@ func (sc StorageCore) getAllImExports(app *PropertyGraph.Vertex) []*PropertyGrap
 
 func (sc StorageCore) registerApp(req RegisterAppRequest) {
 
-	log.Println("Assinging ID to App",req.AppName,"->", string(req.Id))
-	sc.graph.CreateVertex(string(req.Id), req.AppName)
+	log.Println("Assinging ID to App",req.App.AppName,"->", string(req.Id))
+	sc.graph.CreateVertex(string(req.Id), req.App)
 
 }
 
@@ -464,12 +464,12 @@ func (sc StorageCore) registerKey(k aursir4go.AppKey) *PropertyGraph.Vertex {
 	kv := sc.getKeyVertex(k.ApplicationKeyName)
 
 	if kv != nil {
-		if aursir4go.HashAppKey(k) != aursir4go.HashAppKey(kv.Properties.(aursir4go.AppKey)){
-			log.Println("STORAGECORE", "Updating key with new version")
-		} else {
+		//if aursir4go.HashAppKey(k) != aursir4go.HashAppKey(kv.Properties.(aursir4go.AppKey)){
+			//log.Println("STORAGECORE", "Updating key with new version")
+		//} else {
 			log.Println("STORAGECORE", "Aborting register, key already known")
 			return kv
-		}
+		//}
 	}
 
 	kv = sc.graph.CreatePersistentVertex(generateUuid(), k)
@@ -492,7 +492,7 @@ func (sc StorageCore) getKeyVertex(k string) (*PropertyGraph.Vertex) {
 	return nil
 }
 
-func (sc StorageCore) addResult(arr AddResRequest) (result ResRegistered) {
+func (sc StorageCore) addResult(arr AddResRequest) (reply ResRegistered) {
 	req := arr.Req
 	app := sc.graph.GetVertex(arr.AppId)
 	if app == nil {
@@ -506,6 +506,9 @@ func (sc StorageCore) addResult(arr AddResRequest) (result ResRegistered) {
 		log.Println("StorageCore error registering result, key not imported by app")
 		return
 	}
+
+	reply.Importer = make(map[string][]string)
+
 	if arr.Req.Uuid !=""{
 		job := sc.graph.GetVertex(arr.Req.Uuid)
 		if job == nil {
@@ -513,35 +516,33 @@ func (sc StorageCore) addResult(arr AddResRequest) (result ResRegistered) {
 			return
 		}
 		var ccv *PropertyGraph.Vertex
-		result.IsChainCall, ccv = sc.hasChainCall(job)
+		reply.IsChainCall, ccv = sc.hasChainCall(job)
 
-		if result.IsChainCall {
-			result.ChainCall, _ = ccv.Properties.(aursir4go.ChainCall)
+		if reply.IsChainCall {
+			reply.ChainCall, _ = ccv.Properties.(aursir4go.ChainCall)
 			for _, e := range ccv.Incoming {
 				if e.Label == awaiting_job_edge {
-					result.ChainCallImportId = e.Tail.Id
+					reply.ChainCallImportId = e.Tail.Id
 				}
 			}
 		}
-
 		if req.CallType == aursir4go.ONE2ONE || req.CallType == aursir4go.ONE2MANY {
 
 			jobapp := sc.getRequestApp(job)
 			if jobapp != nil {
-				sc.graph.RemoveVertex(job.Id)
-				result.Importer = []string{jobapp.Id}
+				if req.StreamFinished {sc.graph.RemoveVertex(job.Id)}
+				reply.Importer[jobapp.Id] = jobapp.Properties.(aursir4go.AurSirDockMessage).Codecs
 				return
 			}
 			log.Println("StorageCore error registering result, requesting app not found")
 		}
 
-		sc.graph.RemoveVertex(job.Id)
+		if req.StreamFinished {sc.graph.RemoveVertex(job.Id)}
 	}
 
 	if req.CallType == aursir4go.MANY2ONE || req.CallType == aursir4go.MANY2MANY {
-		result.Importer = []string{}
 		for _, imp := range sc.getListener(exp) {
-			result.Importer = append(result.Importer, imp.Id)
+			reply.Importer[imp.Id] = imp.Properties.(aursir4go.AurSirDockMessage).Codecs
 		}
 		//log.Println(req.FunctionName)
 		//log.Println(result.Importer)
@@ -691,14 +692,14 @@ func (sc StorageCore) getListeningApp(lf *PropertyGraph.Vertex) *PropertyGraph.V
 	return nil
 }
 
-func (sc StorageCore) addRequest(arr AddReqRequest) []string {
+func (sc StorageCore) addRequest(arr AddReqRequest) (reply ReqRegistered) {
 	req := arr.Req
 	log.Println("StorageCore registering request",arr.Req.Uuid)
 
 	imp := sc.graph.GetVertex(req.ImportId)
 	if imp == nil {
 		log.Println("StorageCore error registering request, key not imported by app")
-		return nil
+		return
 	}
 
 	//Check if the request vertex already exist. This is the case for chaincalls, where import and request are the same edge
@@ -714,12 +715,17 @@ func (sc StorageCore) addRequest(arr AddReqRequest) []string {
 		if f {
 			log.Println("StorageCore found exporter for request",export.Id)
 			sc.graph.CreateEdge(generateUuid(), doing_job_edge, rv, export, nil)
-			return []string{sc.getExportApp(export).Id}
+			reply.Exporter = make(map[string][]string)
+			exportapp := sc.getExportApp(export)
+			reply.Exporter[exportapp.Id] = exportapp.Properties.(aursir4go.AurSirDockMessage).Codecs
+			return
 		}
 		log.Println("StorageCore could not find exporter for request",req.Uuid)
 
 	}
-	return nil
+
+	//TODO: MANYTOMANAY
+	return
 }
 
 

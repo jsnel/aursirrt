@@ -23,6 +23,6 @@ func Launch(cfg config.RtConfig) {
 
 	}
 
-	log.Fatal("WEBSERVER",http.ListenAndServe(":8080", http.FileServer(http.Dir(webfolder.(string)))))
+	log.Fatal("WEBSERVER",http.ListenAndServe("0.0.0.0:8080", http.FileServer(http.Dir(webfolder.(string)))))
 
 }

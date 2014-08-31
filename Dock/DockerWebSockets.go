@@ -58,40 +58,39 @@ func (dws DockerWebSockets) listen(ws *websocket.Conn){
 		senderId :=ws.RemoteAddr().String()
 		if err == io.EOF {
 			log.Println("DockerWebsockets got EOF on client", senderId)
-			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",eba}}
 			return
 		} else if err != nil {
 			log.Println("DockerWebsockets got error on client %x:", ws.RemoteAddr(), err)
-			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",eba}}
 			return
 		}
 		msgCodec, err := receiveMsg(ws)
 		if err == io.EOF {
 			log.Println("DockerWebsockets got EOF on client", ws.RemoteAddr())
-			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",eba}}
 			closed <- struct{}{}
 			return
 		} else if err != nil {
 			log.Println("DockerWebsockets got error on client %x:", ws.RemoteAddr(), err)
-			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",eba}}
 			return
 		}
 		msgBytes, err := receiveMsg(ws)
 		if err == io.EOF {
 			log.Println("DockerWebsockets got EOF on client", ws.RemoteAddr())
-			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",eba}}
 			closed <- struct{}{}
 			return
 		} else if err != nil {
 			closed <- struct{}{}
 			log.Println("DockerWebsockets got error on client %x:", ws.RemoteAddr(), err)
-			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",&eba}}
+			dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{aursir4go.LEAVE,"JSON",eba}}
 
 			return
 		}
 		msgType, err := strconv.ParseInt(string((*msgtype)),10,64)
-		log.Println("DockerWebsockets got invalid Message on client:", msgType)
-		log.Println("DockerWebsockets got invalid Message on client:", err)
+
 
 		if err != nil {
 			log.Println("DockerWebsockets got invalid Message on client:", ws.RemoteAddr())
@@ -117,7 +116,7 @@ func (dws DockerWebSockets) processMsg(senderId string,msgType int64,msgCodec *[
 
 	codec := string((*msgCodec))
 
-	dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{msgType,codec,msgBytes}}
+	dws.appInChan <- core.AppMessage{senderId,aursir4go.AppMessage{msgType,codec,*msgBytes}}
 
 
 }
@@ -135,7 +134,7 @@ func (dws DockerWebSockets) openConnection(ws *websocket.Conn, closed chan struc
 			appmsg := (msg.AppMsg)
 			websocket.Message.Send(ws,strconv.FormatInt(appmsg.MsgType,10))
 			websocket.Message.Send(ws,appmsg.MsgCodec)
-			websocket.Message.Send(ws,string(*appmsg.Msg))
+			websocket.Message.Send(ws,string(appmsg.Msg))
 
 		case <- closed:
 			return

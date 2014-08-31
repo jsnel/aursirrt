@@ -102,7 +102,7 @@ func (sca StorageCoreAgent) dowrite(req StorageRequestItem) StorageReply {
 		return ImportAdded{id, exported}
 
 	case AddReqRequest:
-		return ReqRegistered{sca.storageCore.addRequest(request)}
+		return sca.storageCore.addRequest(request)
 	case AddResRequest:
 		return sca.storageCore.addResult(request)
 	case ListenRequest:

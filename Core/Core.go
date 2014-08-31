@@ -41,7 +41,10 @@ func (c core) routeIncomingAppMsg(appInChannel chan AppMessage) {
 	for AppMessage := range appInChannel {
 
 		aursirMessage, err := AppMessage.AppMsg.Decode()
-		//log.Println("DEBUG",AppMessage)
+		log.Println("DEBUG",aursirMessage)
+		log.Println("DEBUG",string(AppMessage.AppMsg.Msg),err)
+
+
 		if err == nil {
 
 			switch aursirMessage := aursirMessage.(type) {
@@ -94,10 +97,10 @@ func (c core) callChain(senderId string,ccmsg aursir4go.AurSirCallChain) {
 	for i,call := range ccmsg.CallChain {
 		tak := call.AppKeyName
 		tfn := call.FunctionName
-		 if !c.chainChecker(oak,ofn,tak,tfn,call.ArgumentMap){
-			 ok = false
-			 insane = append(insane,int64(i))
-		 }
+		if !c.chainChecker(oak,ofn,tak,tfn,call.ArgumentMap){
+			ok = false
+			insane = append(insane,int64(i))
+		}
 
 		oak = tak
 		ofn = tfn
@@ -122,7 +125,7 @@ func (c core) callChain(senderId string,ccmsg aursir4go.AurSirCallChain) {
 
 func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap map[string]string) bool {
 	oak, f := (c.storageAgent.Read(storagecore.GetAppKey{orgAppKey})).(aursir4go.AppKey)
-	//log.Println(orgFun)
+	log.Println(orgFun)
 	if !f {
 		return false
 	}
@@ -130,7 +133,7 @@ func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap 
 	if !f  {
 		return false
 	}
-	//log.Println(tak)
+	log.Println(tak)
 
 	var ofn aursir4go.Function
 	f = false
@@ -140,11 +143,14 @@ func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap 
 			f = true
 		}
 	}
-	//log.Println(ofn)
+	log.Println(ofn)
 
 	if !f {return false}
-
 	tmp := map[string]int{}
+	log.Println(len(paramap))
+	if len(paramap) == 0 {
+		f =true
+	} else {
 		for input, output := range paramap {
 			f = false
 			for _, out := range ofn.Output {
@@ -156,6 +162,7 @@ func (c core) chainChecker(orgAppKey, orgFun, tarAppKey, tarFun string, paramap 
 				}
 			}
 		}
+	}
 	if !f {return false}
 
 	var tfn aursir4go.Function
@@ -249,17 +256,44 @@ func (c core) result(senderId string, rmsg aursir4go.AurSirResult) {
 	resReg, ok := reply.(storagecore.ResRegistered)
 
 	if ok && len(resReg.Importer)!=0{
-		for _, imp := range resReg.Importer{
+		for imp, codecs := range resReg.Importer{
+
+			//check if we need to recode
+			recode := true
+			for _, codec := range codecs {
+				if codec == rmsg.Codec {
+					recode = false
+					break
+				}
+			}
 			var rm aursir4go.AppMessage
-			rm.Encode(rmsg,"JSON")
+
+			if recode {
+				log.Println("CORE","Recoding")
+				var tmp map[string]interface {}
+				log.Println(codecs)
+				src := aursir4go.GetCodec(rmsg.Codec)
+				target := aursir4go.GetCodec(codecs[0])
+				src.Decode(rmsg.Result, &tmp)
+				newres := rmsg
+				newres.Codec = codecs[0]
+				newres.Result,_ = target.Encode(tmp)
+				rm.Encode(newres,"JSON")
+			} else {
+				rm.Encode(rmsg,"JSON")
+			}
+
 			c.appOutChannel <-AppMessage{imp,rm}
 		}
 	}
 
 	if ok && resReg.IsChainCall{
+		log.Println("CORE","Creating next call in chain")
+
 		c.createChainCall(senderId,rmsg,resReg.ChainCall,resReg.ChainCallImportId)
 	}
 }
+
 
 func (c core) persistResult(req aursir4go.AurSirRequest, res aursir4go.AurSirResult) {
 	answer := make(chan string)
@@ -278,16 +312,22 @@ func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult
 	}
 	var tmp interface {}
 
-	codec.Decode(&prevResult.Result,&tmp)
-	//log.Println(string(prevResult.Result),tmp)
-	resultParameter := tmp.(map[string]interface {})
+	codec.Decode(prevResult.Result,&tmp)
 	requestParameter := map[string]interface {}{}
+
+	resultParameter, ok := tmp.(map[interface{}]interface {})
+	if !ok {
+		resultParameter2, _ := tmp.(map[string]interface {})
 		for target, origin := range cc.ArgumentMap {
-			//log.Println(origin)
-			//log.Println(resultParameter[origin])
+			requestParameter[target] = resultParameter2[origin]
+		}
+	}else{
+		for target, origin := range cc.ArgumentMap {
 			requestParameter[target] = resultParameter[origin]
 		}
+	}
 
+	//log.Println(requestParameter)
 	req , err:=codec.Encode(requestParameter)
 	if err != nil {
 		return
@@ -304,17 +344,43 @@ func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult
 		false,
 		false,
 		"",
-		*req}
-//	log.Println("ChainCalling",request)
-//	log.Println("ChainCalling",string(request.Request))
+		req,
+		prevResult.Stream,
+		prevResult.StreamFinished}
+	//	log.Println("ChainCalling",request)
+	//	log.Println("ChainCalling",string(request.Request))
 	reqReg, ok := c.storageAgent.Write(storagecore.AddReqRequest{senderId,request}).(storagecore.ReqRegistered)
 	//log.Println(ok,reqReg)
 	if ok{
-		for _, exp := range reqReg.Exporter {
-			var rm aursir4go.AppMessage
-			rm.Encode(request, "JSON")
-			c.appOutChannel <-AppMessage{exp, rm}
+		c.transmitRequests(request,reqReg)
+	}
+}
+
+func (c core) transmitRequests(request aursir4go.AurSirRequest, targets storagecore.ReqRegistered){
+	for exp, codecs := range targets.Exporter {
+		//check if we need to recode
+		recode := true
+		for _, codec := range codecs {
+			if codec == request.Codec {
+				recode = false
+				break
+			}
 		}
+		var rm aursir4go.AppMessage
+
+		if recode {
+			var tmp interface {}
+			src := aursir4go.GetCodec(request.Codec)
+			target := aursir4go.GetCodec(codecs[0])
+			src.Decode(request.Request, tmp)
+			newreq := request
+			newreq.Codec = codecs[0]
+			newreq.Request,_ = target.Encode(tmp)
+			rm.Encode(newreq,"JSON")
+		} else {
+			rm.Encode(request,"JSON")
+		}
+		c.appOutChannel <-AppMessage{exp, rm}
 	}
 }
 
@@ -323,11 +389,7 @@ func (c core) request(senderId string, rmsg aursir4go.AurSirRequest) {
 	reply := c.storageAgent.Write(storagecore.AddReqRequest{senderId,rmsg})
 	reqreg, ok := reply.(storagecore.ReqRegistered)
 	if ok && len(reqreg.Exporter)!=0{
-		for _, exp := range reqreg.Exporter{
-			var rm aursir4go.AppMessage
-			rm.Encode(rmsg,"JSON")
-			c.appOutChannel <-AppMessage{exp,rm}
-		}
+		c.transmitRequests(rmsg,reqreg)
 	}
 }
 
@@ -335,8 +397,8 @@ func (c core) request(senderId string, rmsg aursir4go.AurSirRequest) {
 func (c core) dock(senderId string, dmsg aursir4go.AurSirDockMessage) {
 	log.Println("Processing DOCK request from", senderId)
 	c.storageAgent.Write(storagecore.RegisterAppRequest{
-		senderId,
-		dmsg.AppName})
+	senderId,
+	dmsg})
 	var dm aursir4go.AppMessage
 	dm.Encode(aursir4go.AurSirDockedMessage{}, "JSON")
 	c.appOutChannel <- AppMessage{senderId, dm}
@@ -345,7 +407,7 @@ func (c core) dock(senderId string, dmsg aursir4go.AurSirDockMessage) {
 func (c core) leave(senderId string) {
 	log.Println("Processing LEAVE request from", senderId)
 	reply := c.storageAgent.Write(storagecore.RemoveAppRequest{
-		senderId})
+	senderId})
 	leave, ok := reply.(storagecore.AppRemoved)
 	if ok {
 
