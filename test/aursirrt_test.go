@@ -1,5 +1,4 @@
 package test
-/*
 
 
 import (
@@ -367,4 +366,3 @@ func testexporterctrstr() (*aursir4go.AurSirInterface, *aursir4go.ExportedAppKey
 	return iface, exp
 
 }
-*/

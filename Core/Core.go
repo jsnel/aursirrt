@@ -308,6 +308,8 @@ func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult
 
 	codec := aursir4go.GetCodec(prevResult.Codec)
 	if codec==nil {
+		log.Println("CORE","Error creating next call in chain, missing Codec in PrevResult")
+
 		return
 	}
 	var tmp interface {}
@@ -352,6 +354,8 @@ func (c core) createChainCall(senderId string, prevResult aursir4go.AurSirResult
 	reqReg, ok := c.storageAgent.Write(storagecore.AddReqRequest{senderId,request}).(storagecore.ReqRegistered)
 	//log.Println(ok,reqReg)
 	if ok{
+		log.Println("CORE","Sucessfully created callchain, transmitting")
+
 		c.transmitRequests(request,reqReg)
 	}
 }
@@ -368,18 +372,30 @@ func (c core) transmitRequests(request aursir4go.AurSirRequest, targets storagec
 		}
 		var rm aursir4go.AppMessage
 
-		if recode {
+		if recode{
+			var err error
+			log.Println("CORE","recoding for transmission")
 			var tmp interface {}
 			src := aursir4go.GetCodec(request.Codec)
 			target := aursir4go.GetCodec(codecs[0])
 			src.Decode(request.Request, tmp)
 			newreq := request
 			newreq.Codec = codecs[0]
-			newreq.Request,_ = target.Encode(tmp)
+			log.Println("CORE","Transmitting",newreq.Tagsz)
+
+			newreq.Request,err  = target.Encode(tmp)
+			if err != nil{
+				log.Println("CORE","Error transmitting, recoding failed", err)
+				return
+			}
+			log.Println("CORE","Sucessfully recoded request")
+
 			rm.Encode(newreq,"JSON")
 		} else {
 			rm.Encode(request,"JSON")
 		}
+		log.Println("CORE","Transmitting")
+
 		c.appOutChannel <-AppMessage{exp, rm}
 	}
 }

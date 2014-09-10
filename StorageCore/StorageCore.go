@@ -541,7 +541,7 @@ func (sc StorageCore) addResult(arr AddResRequest) (reply ResRegistered) {
 	}
 
 	if req.CallType == aursir4go.MANY2ONE || req.CallType == aursir4go.MANY2MANY {
-		for _, imp := range sc.getListener(exp) {
+		for _, imp := range sc.getListener(exp, req.FunctionName) {
 			reply.Importer[imp.Id] = imp.Properties.(aursir4go.AurSirDockMessage).Codecs
 		}
 		//log.Println(req.FunctionName)
@@ -671,11 +671,11 @@ func (sc StorageCore) linkExporterToListen(imp *PropertyGraph.Vertex) {
 	}
 }
 
-func (sc StorageCore) getListener(exp *PropertyGraph.Vertex) []*PropertyGraph.Vertex {
+func (sc StorageCore) getListener(exp *PropertyGraph.Vertex, functionName string) []*PropertyGraph.Vertex {
 	listener := []*PropertyGraph.Vertex{}
 	for _, e := range exp.Incoming {
 
-		if e.Label == listen_edge {
+		if e.Label == listen_edge && e.Tail.Properties.(string)==functionName {
 			listener = append(listener, sc.getListeningApp(e.Tail))
 		}
 	}
@@ -774,12 +774,18 @@ func (sc StorageCore) addCallChain(accr AddCallChainRequest)[]string{
 		sc.graph.CreateEdge(generateUuid(), callchain_edge, frv, prev, nil)
 
 	}
+	log.Println("StorageCore OrigrinCalltype:",req.OriginRequest.CallType)
 
 	if req.OriginRequest.CallType == aursir4go.ONE2ONE || req.OriginRequest.CallType == aursir4go.MANY2ONE {
 		f, export := sc.isExported(imp)
 		if f {
+			log.Println("StorageCore found exporter for ChainCall:", sc.getExportApp(export).Id)
+
 			sc.graph.CreateEdge(generateUuid(), doing_job_edge, rv, export, nil)
 			return []string{sc.getExportApp(export).Id}
+		} else{
+			log.Println("StorageCore didnt find exporter for ChainCall with Id:", req.OriginRequest.Uuid)
+
 		}
 	}
 	return nil
