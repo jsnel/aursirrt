@@ -1,11 +1,13 @@
 package dockprocessor
 
-import "github.com/joernweissenborn/aursir4go"
-import "github.com/joernweissenborn/aursirrt/core/processors"
+import (
+	"github.com/joernweissenborn/aursir4go"
+	"processor"
+)
 
 type DockProcessor struct {
 
-	processors.Processor
+	processor.GenericProcessor
 
 	AppId string
 
@@ -15,7 +17,6 @@ type DockProcessor struct {
 
 func (p DockProcessor) Process() {
 
-	app := p.GetApp()
 
 	if !app.Exists("") {
 		app.Create(p.AppId,p.DockMessage)
