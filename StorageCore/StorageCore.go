@@ -537,7 +537,10 @@ func (sc StorageCore) addResult(arr AddResRequest) (reply ResRegistered) {
 			log.Println("StorageCore error registering result, requesting app not found")
 		}
 
-		if req.StreamFinished {sc.graph.RemoveVertex(job.Id)}
+		if req.StreamFinished {
+			log.Println("StorageCore remiving job")
+
+			sc.graph.RemoveVertex(job.Id)}
 	}
 
 	if req.CallType == aursir4go.MANY2ONE || req.CallType == aursir4go.MANY2MANY {
@@ -722,9 +725,15 @@ func (sc StorageCore) addRequest(arr AddReqRequest) (reply ReqRegistered) {
 		}
 		log.Println("StorageCore could not find exporter for request",req.Uuid)
 
+	} else {
+		exporter := sc.getExporter(imp)
+		reply.Exporter = make(map[string][]string)
+		for _, export:= range exporter {
+			exp := sc.getExportApp(export)
+			reply.Exporter[exp.Id] = exp.Properties.(aursir4go.AurSirDockMessage).Codecs
+		}
 	}
 
-	//TODO: MANYTOMANAY
 	return
 }
 
