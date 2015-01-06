@@ -1,4 +1,4 @@
-package appkey
+package types
 
 import (
 	"storage"
@@ -11,7 +11,7 @@ type AppKey struct {
 	appkey aursir4go.AppKey
 }
 
-func Get(appkey aursir4go.AppKey, agent storage.StorageAgent) AppKey{
+func GetAppKey(appkey aursir4go.AppKey, agent storage.StorageAgent) AppKey{
 	return AppKey{agent,appkey}
 }
 
@@ -19,8 +19,8 @@ func (a AppKey) Exists() bool {
 
 	c := make(chan bool)
 
-	a.Agent.Read(func (sc *storage.StorageCore){
-		for _, ke := range sc.root.Outgoing {
+	a.agent.Read(func (sc *storage.StorageCore){
+		for _, ke := range sc.Root.Outgoing {
 			if ke.Label == storage.KNOWN_APPKEY_EDGE {
 				key, _ := ke.Head.Properties.(aursir4go.AppKey)
 				if key.ApplicationKeyName == a.appkey.ApplicationKeyName {
@@ -39,8 +39,8 @@ func (a AppKey) GetId() string {
 
 	c := make(chan string)
 
-	a.Agent.Read(func (sc *storage.StorageCore){
-		for _, ke := range sc.root.Outgoing {
+	a.agent.Read(func (sc *storage.StorageCore){
+		for _, ke := range sc.Root.Outgoing {
 			if ke.Label == storage.KNOWN_APPKEY_EDGE {
 				key, _ := ke.Head.Properties.(aursir4go.AppKey)
 				if key.ApplicationKeyName == a.appkey.ApplicationKeyName {
@@ -58,10 +58,10 @@ func (a AppKey) GetId() string {
 func (a AppKey) Create() {
 	c := make(chan bool)
 	if !a.Exists() {
-		a.Agent.Write(func(sc *storage.StorageCore) {
+		a.agent.Write(func(sc *storage.StorageCore) {
 			kv := sc.InMemoryGraph.CreateVertex(storage.GenerateUuid(), a.appkey)
 
-			sc.graph.CreateEdge(storage.GenerateUuid(), storage.KNOWN_APPKEY_EDGE, kv, sc.root, nil)
+			sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), storage.KNOWN_APPKEY_EDGE, kv, sc.Root, nil)
 
 			log.Println("StorageCore Key registered")
 			c<-false

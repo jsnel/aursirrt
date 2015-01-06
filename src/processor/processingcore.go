@@ -1,11 +1,14 @@
 package processor
 
-import "log"
+import (
+	"log"
+	"storage"
+)
 
 const DEBUG = true
 
 
-func Process(procchan chan Processor, maxprocesses int64) {
+func Process(procchan chan Processor, storageagent storage.StorageAgent, maxprocesses int64) {
 
 	print("Initialized")
 
@@ -14,7 +17,7 @@ func Process(procchan chan Processor, maxprocesses int64) {
 	for proc := range procchan {
 		procslots <- struct{}{}
 
-		proc.Init(procchan)
+		proc.Init(procchan, storageagent)
 
 		debugPrint("Processing ")
 
@@ -24,10 +27,8 @@ func Process(procchan chan Processor, maxprocesses int64) {
 }
 
 func process(p Processor, ps chan struct{}){
-
 	p.Process()
 	<- ps
-
 }
 
 func print(msg string){

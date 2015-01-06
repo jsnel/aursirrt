@@ -3,11 +3,12 @@ package dockprocessor
 import (
 	"github.com/joernweissenborn/aursir4go"
 	"processor"
+	"storage/types"
 )
 
 type DockProcessor struct {
 
-	processor.GenericProcessor
+	*processor.GenericProcessor
 
 	AppId string
 
@@ -17,11 +18,10 @@ type DockProcessor struct {
 
 func (p DockProcessor) Process() {
 
-
-	if !app.Exists("") {
-		app.Create(p.AppId,p.DockMessage)
+	app := types.GetApp(p.AppId,p.GetAgent())
+	if !app.Exists() {
+		app.Create(p.DockMessage)
 	}
 
 }
 
-func registerApp(){}

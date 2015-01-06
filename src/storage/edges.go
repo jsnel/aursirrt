@@ -3,8 +3,8 @@ package storage
 const (
 KNOWN_APPKEY_EDGE ="KNOWN_APPKEY"
 EXPORT_EDGE       = "EXPORT"
-import_edge       = "IMPORT"
-tag_edge          = "HAS_TAG"
+	IMPORT_EDGE       = "IMPORT"
+TAG_EDGE          = "HAS_TAG"
 implements_edge   = "IMPLEMENTS"
 awaiting_job_edge = "AWAITING_JOB"
 doing_job_edge    = "DOING_JOB"
