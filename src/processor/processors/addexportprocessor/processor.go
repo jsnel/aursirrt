@@ -3,6 +3,7 @@ package addexportprocessor
 import (
 	"github.com/joernweissenborn/aursir4go"
 	"processor"
+	"storage/types"
 )
 
 type AddExportProcessor struct {
@@ -17,8 +18,8 @@ type AddExportProcessor struct {
 
 func (p AddExportProcessor) Process() {
 
-	//export := types.GetExport(p.AppId,p.AddExportMsg.AppKey, p.AddExportMsg.Tags,p.GetAgent())
-	//export.Add()
+	export := types.GetExport(p.AppId,p.AddExportMsg.AppKey, p.AddExportMsg.Tags,p.GetAgent())
+	export.Add()
 
 }
 

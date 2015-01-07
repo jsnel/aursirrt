@@ -28,15 +28,18 @@ func (sc *StorageCore) Run(storageWriteChan,storageReadChan chan StorageFunc){
 
 	for ok {
 		select {
-
 		case fun, ok := <-storageWriteChan:
 			if ok{
 				sc.ExecuteFunc(fun)
+			} else {
+				panic("StorageCoreCorruption")
 			}
 
 		case fun, ok := <-storageReadChan:
 			if ok{
 				sc.ExecuteFunc(fun)
+			}      else {
+				panic("StorageCoreCorruption")
 			}
 		}
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/joernweissenborn/aursir4go"
 	"storage/types"
 	"processor/processors/dockprocessor"
-	"log"
 )
 
 var Testdockmsg = aursir4go.AurSirDockMessage{"testapp",[]string{"JSON"}}
@@ -39,7 +38,7 @@ func TestAddExportProcessor(t *testing.T){
 
 	go func (){pc <- tp}()
 	exp := <- tp.c
-	if !exp {
+	if exp {
 		t.Error("Failed to create export")
 	}
 

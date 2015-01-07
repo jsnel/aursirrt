@@ -2,6 +2,7 @@ package types
 
 import (
 	"storage"
+	"fmt"
 )
 
 type Tag struct {
@@ -40,7 +41,8 @@ func (t *Tag) setId() {
 	})
 	t.id = <- c
 }
-func (t Tag) GetId() string{
+func (t *Tag) GetId() string{
+
 	if t.id == ""{
 		t.setId()
 	}
@@ -54,12 +56,17 @@ func (t Tag) GetId() string{
 
 }
 
-func (t Tag) Create(){
+func (t *Tag) Create(){
 	if !t.Exists() {
+		printDebug(fmt.Sprint("Creating tag",t.name, t.key))
+
 		c := make(chan string)
 		defer close(c)
 		keyid := t.key.GetId()
+		printDebug(fmt.Sprint("tag keyid is ",keyid))
+
 		t.agent.Write(func (sc *storage.StorageCore){
+
 			tv := sc.CreateVertex(storage.GenerateUuid(), t.name)
 			kv := sc.GetVertex(keyid)
 			sc.CreateEdge(storage.GenerateUuid(), storage.TAG_EDGE, kv,tv, nil)
@@ -67,6 +74,7 @@ func (t Tag) Create(){
 			c <- tv.Id
 		})
 		t.id = <-c
+
 	}
 }
 
@@ -77,15 +85,20 @@ func (t Tag) LinkExport(e *Export){
 		c := make(chan string)
 		defer close(c)
 		eid := e.GetId()
-
+		printDebug(fmt.Sprint("linking tag and key ",t.id,eid))
+		       tagid := t.GetId()
 		t.agent.Write(func (sc *storage.StorageCore){
-			tv := sc.GetVertex(t.GetId())
 			ev := sc.GetVertex(eid)
+
+			tv := sc.GetVertex(tagid)
 			sc.CreateEdge(storage.GenerateUuid(), storage.TAG_EDGE, tv, ev, nil)
 
 			c <- ""
+
 		})
-	<-c
+		<-c
+		printDebug(fmt.Sprint("linking tag and key sucess"))
+
 	}
 }
 
@@ -93,22 +106,30 @@ func (t Tag) Exists() bool {
 	c := make(chan bool)
 	defer close(c)
 	keyid := t.key.GetId()
+
 	t.agent.Read(func (sc *storage.StorageCore){
 		kv := sc.GetVertex(keyid)
+
 		if kv == nil {
 			c <-false
 			return
 		}
+
 		for _,e := range kv.Incoming{
+
 			if e.Label == storage.TAG_EDGE {
+
 				tagname,_ := e.Tail.Properties.(string)
 				if tagname == t.name {
+
 					c<-true
 					return
 				}
 			}
 		}
+
 		c <- false
+
 	})
 	return <- c
 }

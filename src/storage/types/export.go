@@ -30,12 +30,16 @@ func (e *Export) Exists() bool {
 func (e *Export) Add() {
 	id := make(chan string)
 	defer close(id)
+	log.Println("STORAGECORE", "Adding export from", e.appid)
+
 	a := GetApp(e.appid, e.agent)
+
 	if !a.Exists() {
 		log.Println("STORAGECORE", "Adding exporter failed, app does not exist:", e.appid)
 		return
 	}
 	k := GetAppKey(e.key, e.agent)
+
 	k.Create()
 	keyid := k.GetId()
 	e.agent.Write(func(sc *storage.StorageCore) {
@@ -49,6 +53,7 @@ func (e *Export) Add() {
 
 		id <- ev.Id
 	})
+
 	e.id = <-id
 
 	if e.id != "" {
@@ -57,11 +62,13 @@ func (e *Export) Add() {
 			t := GetTag(k,tag,e.agent)
 
 			t.Create()
+
 			t.LinkExport(e)
-			log.Println("STORAGECORE", "Adding exporter failed, app does not exist:", t.Exists())
+
 
 		}
 	}
+
 }
 
 func (e *Export) GetApp() App{
