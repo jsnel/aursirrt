@@ -3,7 +3,7 @@ package types
 import (
 	"testing"
 	"storage"
-	"github.com/joernweissenborn/aursir4go"
+	"github.com/joernweissenborn/aursir4go/messages"
 )
 
 func TestAppCreation(t *testing.T){
@@ -12,20 +12,31 @@ func TestAppCreation(t *testing.T){
 	if app.Exists() {
 		t.Error("Found non existing app")
 	}
-	dockmsg := aursir4go.AurSirDockMessage{"HelloWorld",[]string{"JSON"}}
-	app.Create(dockmsg)
-	if !app.Exists() {
+	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
+	if !app.Create(dockmsg,testconn{}) {
 		t.Error("Could not create app")
+	}
+	if !app.Exists() {
+		t.Error("Could not find app")
+	}
+	if app.Create(dockmsg,testconn{}) {
+		t.Error("Could create app")
 	}
 }
 
 func TestAppRemoval(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
-	dockmsg := aursir4go.AurSirDockMessage{"HelloWorld",[]string{"JSON"}}
-	app.Create(dockmsg)
+	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
+	app.Create(dockmsg,testconn{})
 	app.Remove()
 	if app.Exists() {
 		t.Error("Could not remove app")
 	}
 }
+
+type testconn struct {
+
+}
+
+func (testconn) Send(msg messages.AurSirMessage){}

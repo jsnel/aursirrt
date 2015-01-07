@@ -2,16 +2,16 @@ package types
 
 import (
 	"storage"
-	"github.com/joernweissenborn/aursir4go"
+	"github.com/joernweissenborn/aursir4go/appkey"
 	"log"
 )
 
 type AppKey struct {
 	agent storage.StorageAgent
-	appkey aursir4go.AppKey
+	appkey appkey.AppKey
 }
 
-func GetAppKey(appkey aursir4go.AppKey, agent storage.StorageAgent) AppKey{
+func GetAppKey(appkey appkey.AppKey, agent storage.StorageAgent) AppKey{
 	return AppKey{agent,appkey}
 }
 
@@ -22,7 +22,7 @@ func (a AppKey) Exists() bool {
 	a.agent.Read(func (sc *storage.StorageCore){
 		for _, ke := range sc.Root.Outgoing {
 			if ke.Label == storage.KNOWN_APPKEY_EDGE {
-				key, _ := ke.Head.Properties.(aursir4go.AppKey)
+				key, _ := ke.Head.Properties.(appkey.AppKey)
 				if key.ApplicationKeyName == a.appkey.ApplicationKeyName {
 					c<-true
 					return
@@ -42,7 +42,7 @@ func (a AppKey) GetId() string {
 	a.agent.Read(func (sc *storage.StorageCore){
 		for _, ke := range sc.Root.Outgoing {
 			if ke.Label == storage.KNOWN_APPKEY_EDGE {
-				key, _ := ke.Head.Properties.(aursir4go.AppKey)
+				key, _ := ke.Head.Properties.(appkey.AppKey)
 				if key.ApplicationKeyName == a.appkey.ApplicationKeyName {
 					c<-ke.Head.Id
 					return
@@ -53,6 +53,42 @@ func (a AppKey) GetId() string {
 	})
 
 	return <- c
+}
+func (a AppKey) GetExporter() (exporter []Export) {
+	exporter = []Export{}
+	c := make(chan string)
+	kid := a.GetId()
+	a.agent.Read(func (sc *storage.StorageCore){
+		for _, ke := range sc.GetVertex(kid).Outgoing {
+			if ke.Label == storage.EXPORT_EDGE {
+					c<-ke.Head.Id
+				}
+			}
+
+		close(c)
+	})
+	for eid := range c {
+		exporter = append(exporter,GetExportById(eid,a.agent))
+	}
+	return
+}
+func (a AppKey) GetImporter() (importer []Import) {
+	importer = []Import{}
+	c := make(chan string)
+	kid := a.GetId()
+	a.agent.Read(func (sc *storage.StorageCore){
+		for _, ke := range sc.GetVertex(kid).Outgoing {
+			if ke.Label == storage.EXPORT_EDGE {
+					c<-ke.Head.Id
+				}
+			}
+
+		close(c)
+	})
+	for eid := range c {
+		importer = append(importer,GetImportById(eid,a.agent))
+	}
+	return
 }
 
 func (a AppKey) Create() {

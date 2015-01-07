@@ -1,11 +1,16 @@
 package types
 
 import (
-	"github.com/joernweissenborn/aursir4go"
 	"log"
 	"storage"
+	"github.com/joernweissenborn/aursir4go/messages"
+	"dock"
 )
 
+type appproperties struct {
+	dockmsg messages.DockMessage
+	connection dock.Connection
+}
 
 type App struct {
 	agent storage.StorageAgent
@@ -27,16 +32,31 @@ func (app App) Exists() bool {
 	return <- c
 }
 
-func (app App) Create(DockMessage aursir4go.AurSirDockMessage){
+func (app App) GetConnection() dock.Connection {
+
+	c := make(chan dock.Connection)
+	defer close(c)
+	app.agent.Read(func (sc *storage.StorageCore){
+		c <- sc.GetVertex(app.Id).Properties.(appproperties).connection
+	})
+
+	return <- c
+}
+
+func (app App) Create(DockMessage messages.DockMessage, Connection dock.Connection) bool{
+	if app.Exists() {
+		return false
+	}
 	c := make(chan struct{})
 	defer close(c)
 	app.agent.Write(func (sc *storage.StorageCore){
 		log.Println("STORAGECORE","Assinging ID to App",DockMessage.AppName,"->", app.Id)
-		sc.CreateVertex(app.Id, DockMessage)
+		sc.CreateVertex(app.Id, appproperties{DockMessage,Connection})
 		c <- struct{}{}
 	})
 
 	<-c
+	return true
 }
 
 

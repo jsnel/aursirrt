@@ -1,9 +1,10 @@
 package dockprocessor
 
 import (
-	"github.com/joernweissenborn/aursir4go"
 	"processor"
 	"storage/types"
+	"dock"
+	"github.com/joernweissenborn/aursir4go/messages"
 )
 
 type DockProcessor struct {
@@ -12,15 +13,19 @@ type DockProcessor struct {
 
 	AppId string
 
-	DockMessage aursir4go.AurSirDockMessage
+	DockMessage messages.DockMessage
+
+	Connection dock.Connection
 
 }
 
 func (p DockProcessor) Process() {
+	if p.Connection != nil {
 
-	app := types.GetApp(p.AppId,p.GetAgent())
-	if !app.Exists() {
-		app.Create(p.DockMessage)
+		app := types.GetApp(p.AppId, p.GetAgent())
+		ok := app.Create(p.DockMessage, p.Connection)
+		app.GetConnection().Send(messages.DockedMessage{ok})
+
 	}
 
 }

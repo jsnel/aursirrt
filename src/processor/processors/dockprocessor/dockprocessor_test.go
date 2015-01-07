@@ -3,12 +3,11 @@ package dockprocessor
 import (
 	"testing"
 	"processor"
-	"storage"
-	"github.com/joernweissenborn/aursir4go"
 	"storage/types"
+	"github.com/joernweissenborn/aursir4go/messages"
 )
 
-var Testdockmsg = aursir4go.AurSirDockMessage{"testapp",[]string{"JSON"}}
+var Testdockmsg = messages.DockMessage{"testapp",[]string{"JSON"}}
 
 
 func TestDockProcessor(t *testing.T){
@@ -16,12 +15,22 @@ func TestDockProcessor(t *testing.T){
 	pc := processor.Testprocessor()
 	defer close(pc)
 
+	c := make(chan bool)
+	defer close(c)
+	conn := testconnection{c}
+
 	var dp DockProcessor
 	dp.GenericProcessor = processor.GetGenericProcessor()
 	dp.AppId = "testid"
 	dp.DockMessage = Testdockmsg
+	dp.Connection = conn
 
 	pc <- dp
+	if !(<-c) {
+		t.Error("Dockmessages says not ok")
+	}
+
+
 
 	var tp testprocessor
 	tp.GenericProcessor = processor.GetGenericProcessor()
@@ -32,8 +41,14 @@ func TestDockProcessor(t *testing.T){
 	pc <- tp
 	exists := (<-tp.c).Exists()
 	if !exists{
-		tp.t.Error("App does not exist")
+		t.Error("App does not exist")
 	}
+
+	pc <- dp
+	if (<-c) {
+		t.Error("Dockmessages says  ok")
+	}
+
 
 }
 
@@ -48,5 +63,15 @@ func (tp testprocessor) Process(){
 
 		tp.c <- app
 
+
+}
+
+type testconnection struct {
+	c chan bool
+}
+
+func (tc testconnection) Send(msg messages.AurSirMessage) {
+
+	tc.c <- msg.(messages.DockedMessage).Ok
 
 }

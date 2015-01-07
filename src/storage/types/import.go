@@ -2,8 +2,9 @@ package types
 
 import (
 	"storage"
-	"github.com/joernweissenborn/aursir4go"
 	"log"
+
+	"github.com/joernweissenborn/aursir4go/appkey"
 )
 
 
@@ -12,19 +13,57 @@ import (
 type Import struct {
 	agent storage.StorageAgent
 	appid string
-	key aursir4go.AppKey
+	key appkey.AppKey
 	tags []string
 	id string
 }
 
 
-func GetImport(appid string, key aursir4go.AppKey, tags []string, agent storage.StorageAgent) Import {
+func GetImport(appid string, key appkey.AppKey, tags []string, agent storage.StorageAgent) Import {
 	i :=  Import{agent,appid,key,tags,""}
 	i.setId()
 	return i
 }
+func GetImportById(id string, agent storage.StorageAgent) Import {
+	var i Import
+	i.id = id
+	i.agent = agent
+	c := make(chan Import)
+	defer close(c)
+	i.agent.Read(func (sc *storage.StorageCore) {
+		iv := sc.GetVertex(id)
+		for _,appedge := range iv.Incoming {
+			if appedge.Label == storage.IMPORT_EDGE {
+				i.appid = appedge.Tail.Id
+				break
+			}
+		}	
+		for _,keyedge := range iv.Outgoing {
+			if keyedge.Label == storage.IMPORT_EDGE {
+				i.key = keyedge.Tail.Properties.(appkey.AppKey)
+				break
+			}
+		}
+		c<-i
+	})
+	imp := <-c
+	imp.tags = []string{}
+	for _, tag := range imp.GetTags() {
+		imp.tags = append(imp.tags,tag.name)
+	}
+	return imp
+}
+
 
 func (i *Import) Exists() bool {
+	if i.id != "" {
+		c := make(chan bool)
+		defer close(c)
+		i.agent.Read(func(sc *storage.StorageCore) {
+			c <- sc.GetVertex(i.id) != nil
+		})
+		return <-c
+	}
 	return i.id == ""
 
 }
@@ -42,13 +81,12 @@ func (i *Import) Add() {
 	i.agent.Write(func(sc *storage.StorageCore) {
 		av := sc.InMemoryGraph.GetVertex(a.Id)
 		kv := sc.InMemoryGraph.GetVertex(keyid)
-		ev := sc.InMemoryGraph.CreateVertex(storage.GenerateUuid(), nil)
+		iv := sc.InMemoryGraph.CreateVertex(storage.GenerateUuid(), nil)
 
+		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), storage.IMPORT_EDGE, kv, iv, nil)
+		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), storage.IMPORT_EDGE, iv, av, nil)
 
-		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), storage.IMPORT_EDGE, kv, ev, nil)
-		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), storage.IMPORT_EDGE, ev, av, nil)
-
-		id <- ev.Id
+		id <- iv.Id
 	})
 	i.id = <-id
 
@@ -56,7 +94,7 @@ func (i *Import) Add() {
 		for _, tag := range i.tags {
 			t := GetTag(k,tag,i.agent)
 			t.Create()
-
+			t.LinkImport(i)
 		}
 	}
 }
@@ -85,11 +123,13 @@ func (e *Import) setId() {
 				//Import - ImportEDGE > Key
 				Import := Importedge.Head
 				for _,Importkeyedge := range Import.Outgoing {
+
 					if Importkeyedge.Label == storage.IMPORT_EDGE {
 						if keyid == Importkeyedge.Head.Id {
 
 							//Import - TAGEDGE > Tag
 							for _, tagedge := range Import.Outgoing {
+
 								if tagedge.Label == storage.TAG_EDGE {
 									tagname := tagedge.Head.Properties.(string)
 									for _, tn := range e.tags {
@@ -151,4 +191,43 @@ func (e Import) GetTags() ([]Tag){
 		c <- tags
 	})
 	return <-c
+}
+func (i Import) GetExporter() (exporter[]Export){
+	exporter = []Export{}
+	key := i.GetAppKey()
+
+	for _,exp := range key.GetExporter(){
+		if exp.HasTags(i.tags) {
+			exporter = append(exporter,exp)
+		}
+	}
+	return exporter
+}
+func (i Import) HasExporter() (bool){
+
+	return len(i.GetExporter())!=0
+}
+func (i Import) GetJobs() (jobs []Job){
+	jobs = []Job{}
+	c := make(chan string)
+	defer close(c)
+	i.agent.Read(func (sc *storage.StorageCore){
+		ev := sc.GetVertex(i.id)
+		for _,tagedge := range ev.Outgoing{
+			if tagedge.Label == storage.AWAITING_JOB_EDGE {
+				c<-tagedge.Head.Id
+
+			}
+		}
+		close(c)
+	})
+
+	for jid := range <- c {
+		jobs = append(jobs, GetJobById(jid))
+	}
+	return
+}
+func (i Import) HasExporter() (bool){
+
+	return len(i.GetExporter())!=0
 }

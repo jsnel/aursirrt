@@ -2,7 +2,7 @@ package types
 
 import (
 	"storage"
-	"github.com/joernweissenborn/aursir4go"
+	"github.com/joernweissenborn/aursir4go/appkey"
 	"log"
 )
 
@@ -12,20 +12,33 @@ import (
 type Export struct {
 	agent storage.StorageAgent
 	appid string
-	key aursir4go.AppKey
+	key appkey.AppKey
 	tags []string
 	id string
 }
 
 
-func GetExport(appid string, key aursir4go.AppKey, tags []string, agent storage.StorageAgent) Export {
+func GetExport(appid string, key appkey.AppKey, tags []string, agent storage.StorageAgent) Export {
 	e :=  Export{agent,appid,key,tags,""}
+	return e
+}
+func GetExportById(id string, agent storage.StorageAgent) Export {
+	var e Export
+	e.id = id
+	e.agent = agent
 	return e
 }
 
 func (e *Export) Exists() bool {
-	return e.id == ""
-
+	if e.id != "" {
+		c := make(chan bool)
+		defer close(c)
+		e.agent.Read(func(sc *storage.StorageCore) {
+			c <- sc.GetVertex(e.id) != nil
+		})
+		return <-c
+	}
+	return false
 }
 func (e *Export) Add() {
 	id := make(chan string)
@@ -168,4 +181,18 @@ func (e Export) GetTags() ([]Tag){
 		c <- tags
 	})
 	return <-c
+}
+func (e Export) HasTags(tags []string) bool{
+	mytags := e.GetTags()
+	i:=0
+	for tag := range tags {
+		for mytag := range mytags {
+			if mytag == tag {
+				i++
+				break
+			}
+		}
+	}
+
+	return i == len(tags)
 }

@@ -15,6 +15,7 @@ type Tag struct {
 func GetTag(key AppKey, name string, agent storage.StorageAgent)Tag{
 	tag := Tag{agent,key,name,""}
 	tag.setId()
+
 	return tag
 }
 
@@ -92,6 +93,28 @@ func (t Tag) LinkExport(e *Export){
 
 			tv := sc.GetVertex(tagid)
 			sc.CreateEdge(storage.GenerateUuid(), storage.TAG_EDGE, tv, ev, nil)
+
+			c <- ""
+
+		})
+		<-c
+		printDebug(fmt.Sprint("linking tag and key sucess"))
+
+	}
+}
+
+func (t Tag) LinkImport(i *Import){
+	if t.Exists() {
+		c := make(chan string)
+		defer close(c)
+		iid := i.GetId()
+		printDebug(fmt.Sprint("linking tag and key ",t.id,iid))
+		       tagid := t.GetId()
+		t.agent.Write(func (sc *storage.StorageCore){
+			iv := sc.GetVertex(iid)
+
+			tv := sc.GetVertex(tagid)
+			sc.CreateEdge(storage.GenerateUuid(), storage.TAG_EDGE, tv, iv, nil)
 
 			c <- ""
 

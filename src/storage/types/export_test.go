@@ -4,13 +4,14 @@ import (
 	"testing"
 	"storage"
 	"github.com/joernweissenborn/aursir4go"
+	"github.com/joernweissenborn/aursir4go/messages"
 )
 
 func TestExportCreation(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
-	dockmsg := aursir4go.AurSirDockMessage{"HelloWorld",[]string{"JSON"}}
-	app.Create(dockmsg)
+	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
+	app.Create(dockmsg,testconn{})
 
 	export := GetExport("",aursir4go.HelloAurSirAppKey, []string{"one","two"},agent)
 	export.Add()
