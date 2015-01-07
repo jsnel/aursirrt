@@ -28,7 +28,9 @@ func Process(procchan chan Processor, storageagent storage.StorageAgent, maxproc
 
 func process(p Processor, ps chan struct{}){
 	p.Process()
+	debugPrint("finished ")
 	<- ps
+
 }
 
 func print(msg string){

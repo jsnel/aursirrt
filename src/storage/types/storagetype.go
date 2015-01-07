@@ -1,7 +1,7 @@
 package types
 
-import "github.com/joernweissenborn/aursirrt/core/storage/agent"
+import "storage"
 
 type StorageType struct{
-	Agent agent.StorageAgent
+	Agent storage.StorageAgent
 }

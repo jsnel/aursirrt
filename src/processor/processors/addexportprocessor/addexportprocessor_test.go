@@ -6,6 +6,7 @@ import (
 	"github.com/joernweissenborn/aursir4go"
 	"storage/types"
 	"processor/processors/dockprocessor"
+	"log"
 )
 
 var Testdockmsg = aursir4go.AurSirDockMessage{"testapp",[]string{"JSON"}}
@@ -22,36 +23,36 @@ func TestAddExportProcessor(t *testing.T){
 	dp.AppId = "testid"
 	dp.DockMessage = Testdockmsg
 
-	pc <- dp
+	go func (){pc <- dp}()
 
 	var ap AddExportProcessor
 	ap.GenericProcessor = processor.GetGenericProcessor()
 	ap.AppId = "testid"
 	ap.AddExportMsg = Testaddexpmsg
 
-	pc <- ap
+	go func (){pc <- ap}()
 
 	var tp testprocessor
 	tp.GenericProcessor = processor.GetGenericProcessor()
-	tp.c = make(chan *types.Export)
+	tp.c = make(chan bool)
 	defer close(tp.c)
 
-	pc <- tp
-	 <- tp.c
-//	if exp.GetId() == "" {
-//		t.Error("Failed to create export")
-//	}
+	go func (){pc <- tp}()
+	exp := <- tp.c
+	if !exp {
+		t.Error("Failed to create export")
+	}
 
 
 }
 
 type testprocessor struct {
 	*processor.GenericProcessor
-	c chan *types.Export
+	c chan bool
 	t *testing.T
 }
 
 func (tp testprocessor) Process(){
-		//export := types.GetExport("testid",aursir4go.HelloAurSirAppKey,[]string{"one","two"},tp.GetAgent())
-		tp.c <- new(types.Export)
+		export := types.GetExport("testid",aursir4go.HelloAurSirAppKey,[]string{"one","two"},tp.GetAgent())
+		tp.c <- export.GetId()==""
 }
