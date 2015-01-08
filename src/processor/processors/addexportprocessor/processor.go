@@ -5,6 +5,7 @@ import (
 	"processor"
 	"storage/types"
 	"github.com/joernweissenborn/aursir4go/messages"
+	"processor/processors/pendingjobprocessor"
 )
 
 type AddExportProcessor struct {
@@ -28,5 +29,8 @@ func (p AddExportProcessor) Process() {
 	export.Add()
 
 	app.GetConnection().Send(messages.ExportAddedMessage{export.GetId()})
+	var pjp pendingjobprocessor.PendingJobProcessor
+	pjp.Appkey = export.GetAppKey()
+	p.SpawnProcess(pjp)
 }
 

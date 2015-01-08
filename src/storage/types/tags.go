@@ -70,7 +70,7 @@ func (t *Tag) Create(){
 
 			tv := sc.CreateVertex(storage.GenerateUuid(), t.name)
 			kv := sc.GetVertex(keyid)
-			sc.CreateEdge(storage.GenerateUuid(), storage.TAG_EDGE, kv,tv, nil)
+			sc.CreateEdge(storage.GenerateUuid(), TAG_EDGE, kv,tv, nil)
 
 			c <- tv.Id
 		})
@@ -81,7 +81,7 @@ func (t *Tag) Create(){
 
 
 
-func (t Tag) LinkExport(e *Export){
+func (t Tag) LinkExport(e Export){
 	if t.Exists() {
 		c := make(chan string)
 		defer close(c)
@@ -92,7 +92,7 @@ func (t Tag) LinkExport(e *Export){
 			ev := sc.GetVertex(eid)
 
 			tv := sc.GetVertex(tagid)
-			sc.CreateEdge(storage.GenerateUuid(), storage.TAG_EDGE, tv, ev, nil)
+			sc.CreateEdge(storage.GenerateUuid(), TAG_EDGE, tv, ev, nil)
 
 			c <- ""
 
@@ -103,7 +103,7 @@ func (t Tag) LinkExport(e *Export){
 	}
 }
 
-func (t Tag) LinkImport(i *Import){
+func (t Tag) LinkImport(i Import){
 	if t.Exists() {
 		c := make(chan string)
 		defer close(c)
@@ -114,13 +114,71 @@ func (t Tag) LinkImport(i *Import){
 			iv := sc.GetVertex(iid)
 
 			tv := sc.GetVertex(tagid)
-			sc.CreateEdge(storage.GenerateUuid(), storage.TAG_EDGE, tv, iv, nil)
+			sc.CreateEdge(storage.GenerateUuid(), TAG_EDGE, tv, iv, nil)
 
 			c <- ""
 
 		})
 		<-c
 		printDebug(fmt.Sprint("linking tag and key sucess"))
+
+	}
+}
+func (t Tag) UnlinkImport(i Import){
+	if t.Exists() {
+		c := make(chan string)
+		defer close(c)
+		iid := i.GetId()
+        tagid := t.GetId()
+		delete := true
+		t.agent.Write(func (sc *storage.StorageCore){
+
+			tv := sc.GetVertex(tagid)
+			for _, tagedge := range tv.Outgoing {
+				if tagedge.label == TAG_EDGE {
+					if tagedge.Tail.Id == iid {
+						sc.RemoveEdge(tagedge.Id)
+					} else {
+						delete = false
+					}
+				}
+			}
+			if delete {
+				sc.RemoveVertex(tagid)
+			}
+			c <- ""
+
+		})
+		<-c
+
+	}
+}
+func (t Tag) UnlinkExport(e *Export){
+	if t.Exists() {
+		c := make(chan string)
+		defer close(c)
+		eid := e.GetId()
+        tagid := t.GetId()
+		delete := true
+		t.agent.Write(func (sc *storage.StorageCore){
+
+			tv := sc.GetVertex(tagid)
+			for _, tagedge := range tv.Outgoing {
+				if tagedge.label == TAG_EDGE {
+					if tagedge.Tail.Id == eid {
+						sc.RemoveEdge(tagedge.Id)
+					} else {
+						delete = false
+					}
+				}
+			}
+			if delete {
+				sc.RemoveVertex(tagid)
+			}
+			c <- ""
+
+		})
+		<-c
 
 	}
 }

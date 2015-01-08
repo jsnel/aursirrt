@@ -33,13 +33,13 @@ func GetImportById(id string, agent storage.StorageAgent) Import {
 	i.agent.Read(func (sc *storage.StorageCore) {
 		iv := sc.GetVertex(id)
 		for _,appedge := range iv.Incoming {
-			if appedge.Label == storage.IMPORT_EDGE {
+			if appedge.Label == IMPORT_EDGE {
 				i.appid = appedge.Tail.Id
 				break
 			}
 		}	
 		for _,keyedge := range iv.Outgoing {
-			if keyedge.Label == storage.IMPORT_EDGE {
+			if keyedge.Label == IMPORT_EDGE {
 				i.key = keyedge.Tail.Properties.(appkey.AppKey)
 				break
 			}
@@ -83,8 +83,8 @@ func (i *Import) Add() {
 		kv := sc.InMemoryGraph.GetVertex(keyid)
 		iv := sc.InMemoryGraph.CreateVertex(storage.GenerateUuid(), nil)
 
-		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), storage.IMPORT_EDGE, kv, iv, nil)
-		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), storage.IMPORT_EDGE, iv, av, nil)
+		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), IMPORT_EDGE, kv, iv, nil)
+		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), IMPORT_EDGE, iv, av, nil)
 
 		id <- iv.Id
 	})
@@ -119,18 +119,18 @@ func (e *Import) setId() {
 		i := 0
 		//app - ImportEDGE > Import
 		for _,Importedge := range av.Outgoing{
-			if Importedge.Label == storage.IMPORT_EDGE {
+			if Importedge.Label == IMPORT_EDGE {
 				//Import - ImportEDGE > Key
 				Import := Importedge.Head
 				for _,Importkeyedge := range Import.Outgoing {
 
-					if Importkeyedge.Label == storage.IMPORT_EDGE {
+					if Importkeyedge.Label == IMPORT_EDGE {
 						if keyid == Importkeyedge.Head.Id {
 
 							//Import - TAGEDGE > Tag
 							for _, tagedge := range Import.Outgoing {
 
-								if tagedge.Label == storage.TAG_EDGE {
+								if tagedge.Label == TAG_EDGE {
 									tagname := tagedge.Head.Properties.(string)
 									for _, tn := range e.tags {
 										if tn == tagname {
@@ -160,16 +160,22 @@ func (e Import) GetId() string {
 	return e.id
 }
 
-func (e Import) UpdateTags(){
-	e.ClearTags()
-	e.agent.Write(func (sc *storage.StorageCore) {
-
-	})
+func (i Import) UpdateTags(tags []string){
+	i.ClearTags()
+	i.tags = tags
+	k := i.GetAppKey()
+	for _, tag := range i.tags {
+		t := GetTag(k,tag,i.agent)
+		t.Create()
+		t.LinkImport(i)
+	}
 }
 
-func (e Import) ClearTags(){
+func (i Import) ClearTags(){
 	//key := GetAppKey(e.key,e.agent)
-
+	for _, tag := range i.GetTags() {
+		tag.UnlinkImport(i)
+	}
 }
 
 func (e Import) GetTags() ([]Tag){
@@ -183,7 +189,7 @@ func (e Import) GetTags() ([]Tag){
 	e.agent.Read(func (sc *storage.StorageCore){
 		ev := sc.GetVertex(e.GetId())
 		for _,tagedge := range ev.Outgoing{
-			if tagedge.Label == storage.TAG_EDGE {
+			if tagedge.Label == TAG_EDGE {
 				tagname,_ := tagedge.Head.Properties.(string)
 				tags = append(tags,Tag{e.agent,k,tagname,tagedge.Head.Id})
 			}
@@ -214,7 +220,7 @@ func (i Import) GetJobs() (jobs []Job){
 	i.agent.Read(func (sc *storage.StorageCore){
 		ev := sc.GetVertex(i.id)
 		for _,tagedge := range ev.Outgoing{
-			if tagedge.Label == storage.AWAITING_JOB_EDGE {
+			if tagedge.Label == AWAITING_JOB_EDGE {
 				c<-tagedge.Head.Id
 
 			}
@@ -222,12 +228,23 @@ func (i Import) GetJobs() (jobs []Job){
 		close(c)
 	})
 
-	for jid := range <- c {
-		jobs = append(jobs, GetJobById(jid))
+	for jid := range c {
+		jobs = append(jobs, GetJobById(jid,i.agent))
 	}
 	return
 }
-func (i Import) HasExporter() (bool){
+func (i Import) Remove()  {
+	jobs := i.GetJobs()
+	for _, job := range jobs {
+		job.Remove()
+	}
+	c := make(chan bool)
+	defer close(c)
+	i.agent.Write(func (sc *storage.StorageCore){
+		sc.RemoveVertex(i.id)
+		c<-true
+		return
+	})
+	return <- c
 
-	return len(i.GetExporter())!=0
 }

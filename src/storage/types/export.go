@@ -150,18 +150,25 @@ func (e *Export) GetId() string {
 	return e.id
 }
 
-func (e Export) UpdateTags(){
-	e.ClearTags()
-	e.agent.Write(func (sc *storage.StorageCore) {
 
-	})
+
+	func (e Export) UpdateTags(tags []string){
+	e.ClearTags()
+	e.tags = tags
+	k := e.GetAppKey()
+	for _, tag := range e.tags {
+		t := GetTag(k,tag,e.agent)
+		t.Create()
+		t.LinkExport(e)
+	}
 }
 
 func (e Export) ClearTags(){
 	//key := GetAppKey(e.key,e.agent)
-
+	for _, tag := range e.GetTags() {
+		tag.UnlinkExport(e)
+	}
 }
-
 func (e Export) GetTags() ([]Tag){
 	tags := []Tag{}
 	if e.GetId() == "" {
@@ -195,4 +202,16 @@ func (e Export) HasTags(tags []string) bool{
 	}
 
 	return i == len(tags)
+}
+
+func (e Export) Remove()  {
+	c := make(chan bool)
+	defer close(c)
+	e.agent.Write(func (sc *storage.StorageCore){
+		sc.RemoveVertex(e.id)
+		c<-true
+		return
+	})
+	return <- c
+
 }
