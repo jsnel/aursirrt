@@ -135,7 +135,7 @@ func (t Tag) UnlinkImport(i Import){
 
 			tv := sc.GetVertex(tagid)
 			for _, tagedge := range tv.Outgoing {
-				if tagedge.label == TAG_EDGE {
+				if tagedge.Label == TAG_EDGE {
 					if tagedge.Tail.Id == iid {
 						sc.RemoveEdge(tagedge.Id)
 					} else {
@@ -153,7 +153,7 @@ func (t Tag) UnlinkImport(i Import){
 
 	}
 }
-func (t Tag) UnlinkExport(e *Export){
+func (t Tag) UnlinkExport(e Export){
 	if t.Exists() {
 		c := make(chan string)
 		defer close(c)
@@ -164,7 +164,7 @@ func (t Tag) UnlinkExport(e *Export){
 
 			tv := sc.GetVertex(tagid)
 			for _, tagedge := range tv.Outgoing {
-				if tagedge.label == TAG_EDGE {
+				if tagedge.Label == TAG_EDGE {
 					if tagedge.Tail.Id == eid {
 						sc.RemoveEdge(tagedge.Id)
 					} else {

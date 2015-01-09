@@ -59,9 +59,9 @@ func (a AppKey) GetExporter() (exporter []Export) {
 	c := make(chan string)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
-		for _, ke := range sc.GetVertex(kid).Outgoing {
-			if ke.Label == storage.EXPORT_EDGE {
-					c<-ke.Head.Id
+		for _, ke := range sc.GetVertex(kid).Incoming {
+			if ke.Label == EXPORT_EDGE {
+					c<-ke.Tail.Id
 				}
 			}
 
@@ -77,9 +77,9 @@ func (a AppKey) GetImporter() (importer []Import) {
 	c := make(chan string)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
-		for _, ke := range sc.GetVertex(kid).Outgoing {
-			if ke.Label == storage.EXPORT_EDGE {
-					c<-ke.Head.Id
+		for _, ke := range sc.GetVertex(kid).Incoming {
+			if ke.Label == IMPORT_EDGE {
+					c<-ke.Tail.Id
 				}
 			}
 

@@ -1,58 +1,38 @@
 package dock
 
+import "processor/processors"
+
+import "processor"
+
 import (
 )
 
-type registerDockedApp struct{
-	AppId string
-	//AppChan chan core.AppMessage
+
+
+type DockAgent struct {
+	procchan chan processor.Processor
 }
 
-type ungisterDockedApp struct{
-	AppId string
+func (da DockAgent) ProcessMsg(appid string,msgtype int64, codec string, msg []byte){
+	var p processors.ParseMessageProccesor
+	p.AppId = appid
+	p.Codec = codec
+	p.Msg = msg
+	p.Type = msgtype
+	go da.launchProcess(p)
 }
-//
-//func Launch(ic, oc chan core.AppMessage){
-//
-//	log.Println("Dock Launching")
-//
-//	rc := make(chan interface {})
-//
-//
-//	for i,docker := range CfgDocker(){
-//
-//		log.Println("Dock Launching Docker", i+1)
-//
-//		docker.Launch(ic, rc)
-//	}
-//
-//	dockRouter(oc,rc)
-//
-//}
-//
-//func dockRouter(mc chan core.AppMessage, rc chan interface {} ){
-//	routeTable := make(map[string]chan core.AppMessage)
-//	for{
-//	select {
-//	case msg, ok := <- rc:
-//		if ok{
-//			switch req := msg.(type){
-//			case registerDockedApp:
-//				routeTable[req.AppId] = req.AppChan
-//				log.Println("Registered out channel for",req.AppId)
-//			case ungisterDockedApp:
-//				close(routeTable[req.AppId])
-//				delete(routeTable,req.AppId)
-//			}
-//		}
-//
-//	case appmsg, ok := <- mc:
-//		if ok {
-//			ac, f := routeTable[appmsg.SenderUUID]
-//			if f {
-//				ac <- appmsg
-//			}
-//		}
-//	}
-//	}
-//}
+
+func (da DockAgent) InitDocking(appid string, codec string, msg []byte, connection Connection){
+	var p processors.DockProcessor
+	p.AppId = appid
+	p.Codec = codec
+	p.DockMessage = msg
+	p.Connection = connection
+	go da.launchProcess(p)
+
+}
+
+func (da DockAgent) launchProcess(p processor.Processor){
+	da.procchan <- p
+}
+

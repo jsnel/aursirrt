@@ -40,7 +40,7 @@ func GetImportById(id string, agent storage.StorageAgent) Import {
 		}	
 		for _,keyedge := range iv.Outgoing {
 			if keyedge.Label == IMPORT_EDGE {
-				i.key = keyedge.Tail.Properties.(appkey.AppKey)
+				i.key = keyedge.Head.Properties.(appkey.AppKey)
 				break
 			}
 		}
@@ -94,7 +94,7 @@ func (i *Import) Add() {
 		for _, tag := range i.tags {
 			t := GetTag(k,tag,i.agent)
 			t.Create()
-			t.LinkImport(i)
+			t.LinkImport(*i)
 		}
 	}
 }
@@ -160,14 +160,14 @@ func (e Import) GetId() string {
 	return e.id
 }
 
-func (i Import) UpdateTags(tags []string){
+func (i *Import) UpdateTags(tags []string){
 	i.ClearTags()
 	i.tags = tags
 	k := i.GetAppKey()
 	for _, tag := range i.tags {
 		t := GetTag(k,tag,i.agent)
 		t.Create()
-		t.LinkImport(i)
+		t.LinkImport(*i)
 	}
 }
 
@@ -245,6 +245,6 @@ func (i Import) Remove()  {
 		c<-true
 		return
 	})
-	return <- c
-
+	 <- c
+	return
 }

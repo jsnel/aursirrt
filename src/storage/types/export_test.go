@@ -7,7 +7,7 @@ import (
 	"github.com/joernweissenborn/aursir4go/messages"
 )
 
-func TestExportCreation(t *testing.T){
+func TestExport(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
 	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
@@ -31,4 +31,10 @@ func TestExportCreation(t *testing.T){
 	if export.GetId() == "" {
 		t.Error("Could not retrieve export")
 	}
+
+	if len(export.GetAppKey().GetExporter()) == 0 {
+		t.Error("Could not retrieve export from key")
+
+	}
+
 }

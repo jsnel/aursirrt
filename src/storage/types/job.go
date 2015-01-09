@@ -57,12 +57,17 @@ func (j *Job) GetId() string{
 
 }
 
-func (j *Job) GetRequest() *messages.Request{
+func (j Job) GetImport() Import{
+
+	return GetImportById(j.request.ImportId,j.agent)
+
+}
+func (j Job) GetRequest() *messages.Request{
 
 	return j.request
 
 }
-func (j *Job) GetResult() *messages.Result{
+func (j Job) GetResult() *messages.Result{
 
 	return j.result
 
@@ -135,6 +140,7 @@ func (j *Job) Create(){
 
 			c <- ""
 		})
+		<-c
 
 	}
 }

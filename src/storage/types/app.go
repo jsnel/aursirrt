@@ -21,6 +21,10 @@ func GetApp(Id string, Agent storage.StorageAgent) App {
 	return App{Agent,Id}
 }
 
+func (app App) Send(msg messages.AurSirMessage){
+	app.GetConnection().Send(msg)
+
+}
 func (app App) Exists() bool {
 
 	c := make(chan bool)

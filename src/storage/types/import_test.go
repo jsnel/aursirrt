@@ -6,7 +6,7 @@ import (
 	"github.com/joernweissenborn/aursir4go/messages"
 )
 
-func TestImportCreation(t *testing.T){
+func TestImport(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
 	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
@@ -28,5 +28,26 @@ func TestImportCreation(t *testing.T){
 
 	if Import.GetId() == "" {
 		t.Error("Could not retrieve Import")
+	}
+	key := Import.GetAppKey()
+	if !key.Exists(){
+		t.Error("Could not create key")
+	}
+
+	if len(key.GetImporter()) == 0 {
+		t.Error("Could not retrieve import from key")
+
+	}
+
+	if Import.HasExporter() {
+		t.Error("Exporter should not be present")
+	}
+	eapp := GetApp("testexp",agent)
+	eapp.Create(dockmsg,testconn{})
+
+	export := GetExport("testexp",aursir4go.HelloAurSirAppKey, []string{"one","two"},agent)
+	export.Add()
+	if !Import.HasExporter() {
+		t.Error("Exporter should be present")
 	}
 }

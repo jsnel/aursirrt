@@ -76,7 +76,7 @@ func (e *Export) Add() {
 
 			t.Create()
 
-			t.LinkExport(e)
+			t.LinkExport(*e)
 
 
 		}
@@ -212,6 +212,6 @@ func (e Export) Remove()  {
 		c<-true
 		return
 	})
-	return <- c
-
+	 <- c
+	return
 }
