@@ -16,7 +16,7 @@ type PendingJobProcessor struct {
 
 func (p PendingJobProcessor) Process() {
 
-	for _, imp := range p.appkey.GetImporter(){
+	for _, imp := range p.Appkey.GetImporter(){
 		for _, j := range imp.GetJobs() {
 			if !j.IsAssigned() {
 				if imp.HasExporter() {

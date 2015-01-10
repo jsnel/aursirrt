@@ -45,12 +45,11 @@ func bootCore(a storage.StorageAgent) (processingChan chan processor.Processor){
 	return
 }
 
-func bootDocker(p chan processor.Processor, d dock.Docker) storage.StorageAgent {
+func bootDocker(p chan processor.Processor, d dock.Docker) {
 	mprint("Launching Dock")
-	agent := dock.DockAgent{p}
+	agent := dock.NewAgent(p)
 	d.Launch(agent)
 
-	return storage.NewAgent()
 }
 
 

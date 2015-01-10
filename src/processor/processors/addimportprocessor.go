@@ -20,7 +20,12 @@ func (p AddImportProcessor) Process() {
 
 	Import := types.GetImport(p.AppId,p.AddImportMsg.AppKey, p.AddImportMsg.Tags,p.GetAgent())
 	Import.Add()
-	Import.GetApp().Send(messages.ImportAddedMessage{Import.GetId(),Import.HasExporter()})
+	var smp SendMessageProcessor
+	smp.App = Import.GetApp()
+	smp.Msg = messages.ImportAddedMessage{Import.GetId(),Import.HasExporter()}
+	smp.GenericProcessor = processor.GetGenericProcessor()
+	p.SpawnProcess(smp)
+
 
 
 }

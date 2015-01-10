@@ -24,9 +24,12 @@ func (p LeaveProcessor) Process() {
 
 	app.Remove()
 	for _, k:= range keys {
-		var esp ExportedStateProcessor
-		esp.AppKey = k
-		p.SpawnProcess(esp)
+	    if k.Exists() {
+			var esp ExportedStateProcessor
+			esp.AppKey = k
+			esp.GenericProcessor = processor.GetGenericProcessor()
+			p.SpawnProcess(esp)
+		}
 	}
 }
 

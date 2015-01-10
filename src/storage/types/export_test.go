@@ -3,8 +3,8 @@ package types
 import (
 	"testing"
 	"storage"
-	"github.com/joernweissenborn/aursir4go"
 	"github.com/joernweissenborn/aursir4go/messages"
+	"github.com/joernweissenborn/aursir4go/Example/keys"
 )
 
 func TestExport(t *testing.T){
@@ -13,19 +13,19 @@ func TestExport(t *testing.T){
 	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
 	app.Create(dockmsg,testconn{})
 
-	export := GetExport("",aursir4go.HelloAurSirAppKey, []string{"one","two"},agent)
+	export := GetExport("",keys.HelloAurSirAppKey, []string{"one","two"},agent)
 	export.Add()
 
 	if export.GetId() != "" {
 		t.Error("Created export for non existing app")
 	}
-	export = GetExport("testid",aursir4go.HelloAurSirAppKey, []string{"one","two"},agent)
+	export = GetExport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
 	export.Add()
 
 	if export.GetId() == "" {
 		t.Error("Could not add export")
 	}
-	export = GetExport("testid",aursir4go.HelloAurSirAppKey, []string{"one","two"},agent)
+	export = GetExport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
 	export.Add()
 
 	if export.GetId() == "" {

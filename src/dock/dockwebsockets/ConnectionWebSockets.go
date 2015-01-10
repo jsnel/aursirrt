@@ -3,7 +3,6 @@ package dockwebsockets
 import (
 	"code.google.com/p/go.net/websocket"
 	"strconv"
-	"dock"
 )
 
 type ConnectionWebSockets struct {
@@ -21,7 +20,7 @@ func (cw ConnectionWebSockets) Init() (err error) {
 	return
 }
 
-func (cw *ConnectionWebSockets) Send(msgtype int64, codec string,msg []byte) (err error) {
+func (cw ConnectionWebSockets) Send(msgtype int64, codec string,msg []byte) (err error) {
 	err = websocket.Message.Send(cw.ws,strconv.FormatInt(msgtype,10))
 	if err != nil {
 		return

@@ -6,6 +6,7 @@ import (
 	"github.com/joernweissenborn/aursir4go/messages"
 )
 
+
 func TestAppCreation(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
@@ -39,4 +40,9 @@ type testconn struct {
 
 }
 
-func (testconn) Send(msg messages.AurSirMessage){}
+func (testconn) Send(msgtype int64, codec string,msg []byte) (err error) {
+	return
+}
+func (testconn) Init()error{
+	return nil
+}

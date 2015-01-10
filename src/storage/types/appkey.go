@@ -21,7 +21,7 @@ func (a AppKey) Exists() bool {
 
 	a.agent.Read(func (sc *storage.StorageCore){
 		for _, ke := range sc.Root.Outgoing {
-			if ke.Label == storage.KNOWN_APPKEY_EDGE {
+			if ke.Label == KNOWN_APPKEY_EDGE {
 				key, _ := ke.Head.Properties.(appkey.AppKey)
 				if key.ApplicationKeyName == a.appkey.ApplicationKeyName {
 					c<-true
@@ -41,7 +41,7 @@ func (a AppKey) GetId() string {
 
 	a.agent.Read(func (sc *storage.StorageCore){
 		for _, ke := range sc.Root.Outgoing {
-			if ke.Label == storage.KNOWN_APPKEY_EDGE {
+			if ke.Label == KNOWN_APPKEY_EDGE {
 				key, _ := ke.Head.Properties.(appkey.AppKey)
 				if key.ApplicationKeyName == a.appkey.ApplicationKeyName {
 					c<-ke.Head.Id
@@ -97,7 +97,7 @@ func (a AppKey) Create() {
 		a.agent.Write(func(sc *storage.StorageCore) {
 			kv := sc.InMemoryGraph.CreateVertex(storage.GenerateUuid(), a.appkey)
 
-			sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), storage.KNOWN_APPKEY_EDGE, kv, sc.Root, nil)
+			sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), KNOWN_APPKEY_EDGE, kv, sc.Root, nil)
 
 			log.Println("StorageCore Key registered")
 			c<-false

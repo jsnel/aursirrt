@@ -1,5 +1,9 @@
 package dock
 
+import "log"
+
+import "dock/connection"
+
 import "processor/processors"
 
 import "processor"
@@ -7,7 +11,9 @@ import "processor"
 import (
 )
 
-
+func NewAgent(c chan processor.Processor) DockAgent{
+	 return DockAgent{c}
+}
 
 type DockAgent struct {
 	procchan chan processor.Processor
@@ -19,15 +25,19 @@ func (da DockAgent) ProcessMsg(appid string,msgtype int64, codec string, msg []b
 	p.Codec = codec
 	p.Msg = msg
 	p.Type = msgtype
+	p.GenericProcessor = processor.GetGenericProcessor()
 	go da.launchProcess(p)
 }
 
-func (da DockAgent) InitDocking(appid string, codec string, msg []byte, connection Connection){
+func (da DockAgent) InitDocking(appid string, codec string, msg []byte, connection connection.Connection){
+	debugPrint("initializing docking")
 	var p processors.DockProcessor
 	p.AppId = appid
 	p.Codec = codec
 	p.DockMessage = msg
 	p.Connection = connection
+	p.GenericProcessor = processor.GetGenericProcessor()
+
 	go da.launchProcess(p)
 
 }
@@ -36,3 +46,12 @@ func (da DockAgent) launchProcess(p processor.Processor){
 	da.procchan <- p
 }
 
+
+func debugPrint(msg string){
+
+	if true {
+		log.Println("DEBUG DOCK",msg)
+
+	}
+
+}

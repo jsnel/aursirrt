@@ -30,7 +30,7 @@ func (t *Tag) setId() {
 			return
 		}
 		for _,e := range kv.Incoming{
-			if e.Label == storage.TAG_EDGE {
+			if e.Label == TAG_EDGE {
 				tagname,_ := e.Tail.Properties.(string)
 				if tagname == t.name {
 					c<-e.Tail.Id
@@ -198,7 +198,7 @@ func (t Tag) Exists() bool {
 
 		for _,e := range kv.Incoming{
 
-			if e.Label == storage.TAG_EDGE {
+			if e.Label == TAG_EDGE {
 
 				tagname,_ := e.Tail.Properties.(string)
 				if tagname == t.name {

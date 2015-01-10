@@ -1,7 +1,6 @@
 package processors
 
 import (
-	"github.com/joernweissenborn/aursir4go"
 	"processor"
 	"storage/types"
 	"github.com/joernweissenborn/aursir4go/messages"
@@ -13,7 +12,7 @@ type UpdateExportProcessor struct {
 
 	AppId string
 
-	UpdateExportMsg aursir4go.AurSirUpdateExportMessage
+	UpdateExportMsg messages.UpdateExportMessage
 
 }
 

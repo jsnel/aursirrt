@@ -5,9 +5,9 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"net/http"
 	"strconv"
-	"github.com/joernweissenborn/aursir4go"
 	"dock"
 	"fmt"
+	"github.com/joernweissenborn/aursir4go/messages"
 )
 type DockerWebSockets struct {
 
@@ -24,6 +24,7 @@ func (dws DockerWebSockets)	Launch(agent dock.DockAgent)(err error){
 	dws.port = "8086"
 
 	go dws.server()
+	return
 }
 
 func (dws DockerWebSockets) server(){
@@ -64,14 +65,14 @@ func (dws DockerWebSockets) listen(ws *websocket.Conn){
 			dws.remove(senderId)
 			return
 		}
-		msgType, err := strconv.ParseInt(string((*msgtype)),10,64)
+		msgType, err := strconv.ParseInt(string(msgtype),10,64)
 
 
 		if err != nil {
 			printDebug(fmt.Sprintf("DockerWebsockets got invalid Message on client:", ws.RemoteAddr()))
 			return
 		}
-		if  msgType==aursir4go.DOCK{
+		if  msgType==messages.DOCK{
 			conn := NewConnection(ws)
 			dws.agent.InitDocking(senderId,string(msgCodec),msgBytes,conn)
 		} else {
@@ -84,12 +85,12 @@ func (dws DockerWebSockets) listen(ws *websocket.Conn){
 func receiveMsg( ws *websocket.Conn) ([]byte,error){
 	var msg []byte
 	err := websocket.Message.Receive(ws, &msg)
-	return &msg,err
+	return msg,err
 }
 
 func (dws DockerWebSockets) remove(senderId string){
 	printDebug("DockerWebsockets got EOF or error on client" + senderId)
-	dws.agent.ProcessMsg(senderId,aursir4go.LEAVE,"JSON",[]byte("{}"))
+	dws.agent.ProcessMsg(senderId,messages.LEAVE,"JSON",[]byte("{}"))
 	return
 }
 

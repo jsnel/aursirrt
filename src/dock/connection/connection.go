@@ -1,4 +1,4 @@
-package dock
+package connection
 
 
 type Connection interface {

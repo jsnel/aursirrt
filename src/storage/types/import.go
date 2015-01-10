@@ -55,6 +55,9 @@ func GetImportById(id string, agent storage.StorageAgent) Import {
 }
 
 
+func (i *Import) GetTagNames() []string {
+	                          return i.tags
+}
 func (i *Import) Exists() bool {
 	if i.id != "" {
 		c := make(chan bool)
@@ -216,7 +219,6 @@ func (i Import) HasExporter() (bool){
 func (i Import) GetJobs() (jobs []Job){
 	jobs = []Job{}
 	c := make(chan string)
-	defer close(c)
 	i.agent.Read(func (sc *storage.StorageCore){
 		ev := sc.GetVertex(i.id)
 		for _,tagedge := range ev.Outgoing{

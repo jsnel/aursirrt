@@ -3,9 +3,10 @@ package processors
 import (
 	"processor"
 	"storage/types"
-	"dock"
+
 	"github.com/joernweissenborn/aursir4go/messages"
 	"github.com/joernweissenborn/aursir4go/util"
+	"dock/connection"
 )
 
 type DockProcessor struct {
@@ -18,7 +19,7 @@ type DockProcessor struct {
 
 	DockMessage []byte
 
-	Connection dock.Connection
+	Connection connection.Connection
 
 }
 
@@ -43,9 +44,9 @@ func (p DockProcessor) Process() {
 		var sp SendMessageProcessor
 		sp.App = app
 		sp.Msg = messages.DockedMessage{ok}
+		sp.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(sp)
 
 	}
 
 }
-

@@ -4,6 +4,7 @@ import (
 	"storage"
 	"fmt"
 	"github.com/joernweissenborn/aursir4go/messages"
+	"log"
 )
 
 type jobproperties struct {
@@ -23,7 +24,8 @@ func GetJobFromRequest(request messages.Request, agent storage.StorageAgent)(Job
 }
 
 func GetJobFromResult(result messages.Result, agent storage.StorageAgent)(Job Job){
-	Job.agent = agent
+	Job = GetJobById(result.Uuid,agent)
+
 	Job.result = &result
 	return
 }
@@ -35,6 +37,7 @@ func GetJobById(id string, agent storage.StorageAgent)(Job Job){
 	defer close(c2)
 	Job.agent.Read(func (sc *storage.StorageCore){
 		jv := sc.GetVertex(id)
+		log.Println(jv)
 		if jv == nil {
 			c <- nil
 			c2 <- nil
@@ -136,7 +139,7 @@ func (j *Job) Create(){
 
 			jv := sc.CreateVertex(j.request.Uuid, jobproperties{j.request,j.result})
 			iv := sc.GetVertex(j.request.ImportId)
-			sc.CreateEdge(storage.GenerateUuid(), storage.AWAITING_JOB_EDGE, jv,iv, nil)
+			sc.CreateEdge(storage.GenerateUuid(), AWAITING_JOB_EDGE, jv,iv, nil)
 
 			c <- ""
 		})
@@ -147,6 +150,9 @@ func (j *Job) Create(){
 
 
 func (j Job) Exists() bool {
+	if j.request == nil {
+		return false
+	}
 	c := make(chan bool)
 	defer close(c)
 	j.agent.Read(func (sc *storage.StorageCore){

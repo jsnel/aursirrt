@@ -3,6 +3,7 @@ package processor
 import (
 	"log"
 	"storage"
+	"fmt"
 )
 
 const DEBUG = true
@@ -16,12 +17,15 @@ func Process(procchan chan Processor, storageagent storage.StorageAgent, maxproc
 
 	for proc := range procchan {
 		procslots <- struct{}{}
+		if proc != nil {
+			debugPrint("Processing ")
+			debugPrint(fmt.Sprint(proc))
 
-		proc.Init(procchan, storageagent)
+			proc.Init(procchan, storageagent)
 
-		debugPrint("Processing ")
 
-		go process(proc,procslots)
+			go process(proc,procslots)
+		}
 	}
 
 }

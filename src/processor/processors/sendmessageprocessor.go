@@ -3,9 +3,9 @@ package processors
 import (
 	"processor"
 	"storage/types"
-	"dock"
 	"github.com/joernweissenborn/aursir4go/messages"
 	"github.com/joernweissenborn/aursir4go/util"
+	"dock/connection"
 )
 
 type SendMessageProcessor struct {
@@ -30,7 +30,23 @@ func (p SendMessageProcessor) Process() {
 	case messages.DockedMessage:
 		msgtype = messages.DOCKED
 
+	case messages.ExportAddedMessage:
+		msgtype = messages.EXPORT_ADDED
+
+
+	case messages.ImportAddedMessage:
+		msgtype = messages.IMPORT_ADDED
+
+	case messages.ImportUpdatedMessage:
+		msgtype = messages.IMPORT_UPDATED
+	case *messages.Request:
+		msgtype = messages.REQUEST
+
+case messages.Result:
+		msgtype = messages.RESULT
+
 	}
+
 	decoder := util.GetCodec(codec)
 	if decoder == nil {
 		return
@@ -43,7 +59,8 @@ func (p SendMessageProcessor) Process() {
 
 }
 
-func (p SendMessageProcessor) send(id string,conn dock.Connection,msgtype int64, codec string,msg []byte) {
+func (p SendMessageProcessor) send(id string,conn connection.Connection,msgtype int64, codec string,msg []byte) {
+
 	if nil != conn.Send(msgtype,codec,msg) {
 		var lp LeaveProcessor
 		lp.AppId = id

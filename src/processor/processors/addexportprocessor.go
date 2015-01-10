@@ -21,12 +21,18 @@ func (p AddExportProcessor) Process() {
 	Export := types.GetExport(p.AppId,p.AddExportMsg.AppKey,p.AddExportMsg.Tags,p.GetAgent())
 	Export.Add()
 	app := Export.GetApp()
-	app.Send(messages.ExportAddedMessage{Export.GetId()})
+	var smp SendMessageProcessor
+	smp.App = app
+	smp.Msg = messages.ExportAddedMessage{Export.GetId()}
+	smp.GenericProcessor = processor.GetGenericProcessor()
+	p.SpawnProcess(smp)
 	var pjp PendingJobProcessor
 	pjp.Appkey = Export.GetAppKey()
+	pjp.GenericProcessor = processor.GetGenericProcessor()
 	p.SpawnProcess(pjp)
 	var uesp ExportedStateProcessor
 	uesp.AppKey = Export.GetAppKey()
+	uesp.GenericProcessor = processor.GetGenericProcessor()
 	p.SpawnProcess(uesp)
 }
 

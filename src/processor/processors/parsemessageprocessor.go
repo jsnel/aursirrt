@@ -26,9 +26,11 @@ func (p ParseMessageProccesor) Process() {
 
 	switch p.Type {
 	case messages.LEAVE:
-		var lp LeaveProcessor
-			lp.AppId == p.AppId
-		p.SpawnProcess(lp)
+		var np LeaveProcessor
+			np.AppId = p.AppId
+		np.GenericProcessor = processor.GetGenericProcessor()
+
+		p.SpawnProcess(np)
 
 	case messages.ADD_EXPORT:
 		var m messages.AddExportMessage
@@ -36,6 +38,7 @@ func (p ParseMessageProccesor) Process() {
 		var np AddExportProcessor
 		np.AppId = p.AppId
 		np.AddExportMsg = m
+		np.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(np)
 
 	case messages.UPDATE_EXPORT:
@@ -44,7 +47,8 @@ func (p ParseMessageProccesor) Process() {
 		var np UpdateExportProcessor
 		np.AppId = p.AppId
 		np.UpdateExportMsg = m
-		np.SpawnProcess(np)
+		np.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(np)
 
 	case messages.ADD_IMPORT:
 		var m messages.AddImportMessage
@@ -52,7 +56,8 @@ func (p ParseMessageProccesor) Process() {
 		var np AddImportProcessor
 		np.AppId = p.AppId
 		np.AddImportMsg = m
-		np.SpawnProcess(np)
+		np.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(np)
 
 	case messages.UPDATE_IMPORT:
 		var m messages.UpdateImportMessage
@@ -60,7 +65,8 @@ func (p ParseMessageProccesor) Process() {
 		var np UpdateImportProcessor
 		np.AppId = p.AppId
 		np.UpdateImportMsg = m
-		np.SpawnProcess(np)
+		np.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(np)
 
 	case messages.REQUEST:
 		var m messages.Request
@@ -68,7 +74,16 @@ func (p ParseMessageProccesor) Process() {
 		var np RequestProcessor
 		np.AppId = p.AppId
 		np.Request = m
-		np.SpawnProcess(np)
+		np.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(np)
+	case messages.RESULT:
+		var m messages.Result
+		decoder.Decode(p.Msg, &m)
+		var np ResultProcessor
+		np.AppId = p.AppId
+		np.Result = m
+		np.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(np)
 	}
 
 }

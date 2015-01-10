@@ -3,7 +3,6 @@
 package processors
 
 import (
-	"github.com/joernweissenborn/aursir4go"
 	"processor"
 	"storage/types"
 	"github.com/joernweissenborn/aursir4go/messages"
@@ -15,7 +14,7 @@ type UpdateImportProcessor struct {
 
 	AppId string
 
-	UpdateImportMsg aursir4go.AurSirUpdateImportMessage
+	UpdateImportMsg messages.UpdateImportMessage
 
 }
 
@@ -23,7 +22,10 @@ func (p UpdateImportProcessor) Process() {
 
 	Import := types.GetImportById(p.UpdateImportMsg.ImportId,p.GetAgent())
 	Import.UpdateTags(p.UpdateImportMsg.Tags)
-	app := Import.GetApp()
-	app.Send(messages.ImportUpdatedMessage{Import.GetId(),Import.HasExporter()})
+	var smp SendMessageProcessor
+	smp.App = Import.GetApp()
+	smp.Msg = messages.ImportUpdatedMessage{Import.GetId(),Import.HasExporter()}
+	smp.GenericProcessor = processor.GetGenericProcessor()
+	p.SpawnProcess(smp)
 }
 

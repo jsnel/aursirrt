@@ -20,8 +20,13 @@ func (p RequestProcessor) Process() {
 	job.Create()
 	imp := job.GetImport()
 	if job.Exists() && imp.HasExporter() {
-		exp := imp.GetExporter()[0]
-		job.Assign().
+
+		var djp DeliverJobProcessor
+		djp.Job = job
+		djp.GenericProcessor = processor.GetGenericProcessor()
+
+		p.SpawnProcess(djp)
+
 	}
 }
 

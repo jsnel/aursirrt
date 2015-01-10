@@ -2,9 +2,10 @@ package types
 import (
 	"testing"
 	"storage"
-	"github.com/joernweissenborn/aursir4go"
 	"github.com/joernweissenborn/aursir4go/messages"
 	"time"
+	"github.com/joernweissenborn/aursir4go/calltypes"
+	"github.com/joernweissenborn/aursir4go/Example/keys"
 )
 
 func TestJob(t *testing.T){
@@ -13,7 +14,7 @@ func TestJob(t *testing.T){
 	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
 	app.Create(dockmsg,testconn{})
 
-	Import := GetImport("testid",aursir4go.HelloAurSirAppKey, []string{"one","two"},agent)
+	Import := GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
 	Import.Add()
 	testrequest.ImportId = Import.GetId()
 	job := GetJobFromRequest(testrequest,agent)
@@ -28,7 +29,7 @@ func TestJob(t *testing.T){
 	eapp := GetApp("testexp",agent)
 	eapp.Create(dockmsg,testconn{})
 
-	export := GetExport("testexp",aursir4go.HelloAurSirAppKey, []string{"one","two"},agent)
+	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{"one","two"},agent)
 	export.Add()
 	job.Assign(export)
 
@@ -47,9 +48,10 @@ func TestJob(t *testing.T){
 var testrequest = messages.Request{
 	"org.aursir.helloaursir",
 	"SayHello",
-	aursir4go.ONE2ONE,
+	calltypes.ONE2ONE,
 	[]string{"one","two"},
 	"testjob",
+	"",
 	"",
 	time.Now(),
 	"JSON",

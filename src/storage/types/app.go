@@ -4,12 +4,12 @@ import (
 	"log"
 	"storage"
 	"github.com/joernweissenborn/aursir4go/messages"
-	"dock"
+	"dock/connection"
 )
 
 type appproperties struct {
 	dockmsg messages.DockMessage
-	connection dock.Connection
+	connection connection.Connection
 }
 
 type App struct {
@@ -21,10 +21,6 @@ func GetApp(Id string, Agent storage.StorageAgent) App {
 	return App{Agent,Id}
 }
 
-func (app App) Send(msg messages.AurSirMessage){
-	app.GetConnection().Send(msg)
-
-}
 func (app App) Exists() bool {
 
 	c := make(chan bool)
@@ -37,9 +33,9 @@ func (app App) Exists() bool {
 }
 
 
-func (app App) GetConnection() dock.Connection {
+func (app App) GetConnection() connection.Connection {
 
-	c := make(chan dock.Connection)
+	c := make(chan connection.Connection)
 	defer close(c)
 	app.agent.Read(func (sc *storage.StorageCore){
 		c <- sc.GetVertex(app.Id).Properties.(appproperties).connection
@@ -48,7 +44,7 @@ func (app App) GetConnection() dock.Connection {
 	return <- c
 }
 
-func (app App) Create(DockMessage messages.DockMessage, Connection dock.Connection) bool{
+func (app App) Create(DockMessage messages.DockMessage, Connection connection.Connection) bool{
 	if app.Exists() {
 		return false
 	}
