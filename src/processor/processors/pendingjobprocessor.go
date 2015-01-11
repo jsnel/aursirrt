@@ -15,6 +15,7 @@ type PendingJobProcessor struct {
 }
 
 func (p PendingJobProcessor) Process() {
+	printDebug("pendingjob")
 
 	for _, imp := range p.Appkey.GetImporter(){
 		for _, j := range imp.GetJobs() {
@@ -24,6 +25,8 @@ func (p PendingJobProcessor) Process() {
 					j.Assign(exp)
 					var djp DeliverJobProcessor
 					djp.Job = j
+					djp.GenericProcessor = processor.GetGenericProcessor()
+
 					p.SpawnProcess(djp)
 				}
 			}

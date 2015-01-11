@@ -24,6 +24,7 @@ func GetImport(appid string, key appkey.AppKey, tags []string, agent storage.Sto
 	i.setId()
 	return i
 }
+
 func GetImportById(id string, agent storage.StorageAgent) Import {
 	var i Import
 	i.id = id
@@ -70,6 +71,8 @@ func (i *Import) Exists() bool {
 	return i.id == ""
 
 }
+
+
 func (i *Import) Add() {
 	id := make(chan string)
 	defer close(id)
@@ -102,12 +105,46 @@ func (i *Import) Add() {
 	}
 }
 
-func (e *Import) GetApp() App{
-	return GetApp(e.appid,e.agent)
+func (i *Import) GetApp() App{
+	return GetApp(i.appid,i.agent)
 }
+
+func (i *Import) StartListenToFunction(Function string) {
+
+	kid := i.GetAppKey().GetId()
+	iid := i.GetId()
+	i.agent.Write(func(sc *storage.StorageCore) {
+
+		kv := sc.GetVertex(kid)
+		iv := sc.GetVertex(iid)
+		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), LISTEN_EDGE, kv, iv, Function)
+
+	})
+
+}
+
+func (i *Import) StopListenToFunction(Function string) {
+
+	iid := i.GetId()
+	i.agent.Write(func(sc *storage.StorageCore) {
+
+		iv := sc.GetVertex(iid)
+		for _,listenedge := range iv.Outgoing {
+			if listenedge.Label == LISTEN_EDGE {
+				if listenedge.Properties.(string) == Function {
+					sc.RemoveEdge(listenedge.Id)
+				}
+			}
+		}
+
+	})
+
+}
+
 func (e *Import) GetAppKey() AppKey{
 	return GetAppKey(e.key,e.agent)
 }
+
 func (e *Import) setId() {
 	keyid := e.GetAppKey().GetId()
 	a := GetApp(e.appid, e.agent)

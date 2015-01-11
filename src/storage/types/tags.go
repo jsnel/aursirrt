@@ -163,7 +163,7 @@ func (t Tag) UnlinkExport(e Export){
 		t.agent.Write(func (sc *storage.StorageCore){
 
 			tv := sc.GetVertex(tagid)
-			for _, tagedge := range tv.Outgoing {
+			for _, tagedge := range tv.Incoming {
 				if tagedge.Label == TAG_EDGE {
 					if tagedge.Tail.Id == eid {
 						sc.RemoveEdge(tagedge.Id)

@@ -17,7 +17,7 @@ type AddExportProcessor struct {
 }
 
 func (p AddExportProcessor) Process() {
-
+	             printDebug("AddExport")
 	Export := types.GetExport(p.AppId,p.AddExportMsg.AppKey,p.AddExportMsg.Tags,p.GetAgent())
 	Export.Add()
 	app := Export.GetApp()

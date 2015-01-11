@@ -209,9 +209,9 @@ func (e Export) GetTags() ([]Tag){
 func (e Export) HasTags(tags []string) bool{
 	mytags := e.GetTags()
 	i:=0
-	for tag := range tags {
-		for mytag := range mytags {
-			if mytag == tag {
+	for _,tag := range tags {
+		for _,mytag := range mytags {
+			if mytag.name == tag {
 				i++
 				break
 			}

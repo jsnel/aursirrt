@@ -20,7 +20,8 @@ func (p ExportedStateProcessor) Process() {
 	for _, imp := range p.AppKey.GetImporter() {
 		var smp SendMessageProcessor
 		smp.App = imp.GetApp()
-		smp.Msg =messages.ImportUpdatedMessage{imp.GetId(),imp.HasExporter()}
+		printDebug(imp.HasExporter())
+		smp.Msg = messages.ImportUpdatedMessage{imp.GetId(),imp.HasExporter()}
 		smp.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(smp)
 	}

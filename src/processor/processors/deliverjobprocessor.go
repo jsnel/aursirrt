@@ -16,6 +16,7 @@ type DeliverJobProcessor struct {
 }
 
 func (p DeliverJobProcessor) Process() {
+	printDebug("Deliverjob")
 
 	if p.Job.Exists() {
 
@@ -23,7 +24,7 @@ func (p DeliverJobProcessor) Process() {
 		if imp.HasExporter() {
 			req := p.Job.GetRequest()
 			switch req.CallType{
-			case calltypes.MANY2MANY, calltypes.ONE2MANY:
+			case calltypes.MANY2MANY, calltypes.MANY2ONE:
 			for _, exp := range imp.GetExporter() {
 				p.Job.Assign(exp)
 				var smp SendMessageProcessor
@@ -35,9 +36,9 @@ func (p DeliverJobProcessor) Process() {
 				p.SpawnProcess(smp)
 			}
 
-			case calltypes.MANY2ONE, calltypes.ONE2ONE:
+			case calltypes.ONE2MANY, calltypes.ONE2ONE:
 				exp := imp.GetExporter()[0]
-				p.Job.Assign(exp)
+				p.Job.Assign( exp)
 				var smp SendMessageProcessor
 				smp.App = exp.GetApp()
 				req.ExportId = exp.GetId()

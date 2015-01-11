@@ -18,7 +18,7 @@ type SendMessageProcessor struct {
 }
 
 func (p SendMessageProcessor) Process() {
-
+	               //printDebug(fmt.Sprint("sendmsg",p.Msg) )
 	conn := p.App.GetConnection()
 	id := p.App.Id
 

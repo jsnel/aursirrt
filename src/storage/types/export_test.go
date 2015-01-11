@@ -31,8 +31,8 @@ func TestExport(t *testing.T){
 	if export.GetId() == "" {
 		t.Error("Could not retrieve export")
 	}
-
-	if len(export.GetAppKey().GetExporter()) == 0 {
+	             appkey := export.GetAppKey()
+	if len(appkey.GetExporter()) == 0 {
 		t.Error("Could not retrieve export from key")
 
 	}

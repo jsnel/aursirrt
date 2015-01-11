@@ -33,17 +33,17 @@ func (p ResultProcessor) Process() {
 		}
 	case calltypes.MANY2MANY, calltypes.MANY2ONE:
 		exp := types.GetExportById(p.Result.ExportId,p.GetAgent())
-	for _,imp := range exp.GetAppKey().GetImporter()   {
+	for _,imp := range exp.GetAppKey().GetListener(p.Result.FunctionName,exp)   {
 
-		if exp.HasTags(imp.GetTagNames()){
 			var smp SendMessageProcessor
 			smp.App = imp.GetApp()
 			smp.Msg = p.Result
 			smp.GenericProcessor = processor.GetGenericProcessor()
-			p.SpawnProcess(smp)
+		p.SpawnProcess(smp)
+		job.Remove()
 		}
 	}
 
-	}
+
 }
 

@@ -67,6 +67,14 @@ func (p ParseMessageProccesor) Process() {
 		np.UpdateImportMsg = m
 		np.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(np)
+case messages.LISTEN:
+		var m messages.ListenMessage
+		decoder.Decode(p.Msg, &m)
+		var np StartListenProcessor
+		np.AppId = p.AppId
+		np.StartListenMsg = m
+		np.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(np)
 
 	case messages.REQUEST:
 		var m messages.Request

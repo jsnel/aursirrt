@@ -6,7 +6,7 @@ import (
 	"github.com/joernweissenborn/aursir4go/Example/keys"
 )
 
-func TestImport(t *testing.T){
+func TestTags(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
 	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
@@ -39,44 +39,21 @@ func TestImport(t *testing.T){
 
 	}
 
+
+	eapp := GetApp("testexp",agent)
+	eapp.Create(dockmsg,testconn{})
+
+	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{},agent)
+	export.Add()
 	if Import.HasExporter() {
 		t.Error("Exporter should not be present")
 	}
-	eapp := GetApp("testexp",agent)
-	eapp.Create(dockmsg,testconn{})
-
-	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{"one","two"},agent)
-	export.Add()
+	export.UpdateTags([]string{"one","two"})
 	if !Import.HasExporter() {
 		t.Error("Exporter should be present")
 	}
-}
-
-func TestListen(t *testing.T){
-	agent := storage.NewAgent()
-	app := GetApp("testid",agent)
-	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
-	app.Create(dockmsg,testconn{})
-
-
-	Import := GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
-	Import.Add()
-
-	if Import.GetId() == "" {
-		t.Error("Could not add Import")
-	}
-
-	eapp := GetApp("testexp",agent)
-	eapp.Create(dockmsg,testconn{})
-
-	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{"one","two"},agent)
-	export.Add()
-
-	Import.StartListenToFunction("testfun")
-
-	key := export.GetAppKey()
-	if key.GetListener("testfun",export)[0].GetId() != Import.GetId() {
-		t.Error("failed to listen")
+	export.UpdateTags([]string{"one"})
+	if Import.HasExporter() {
+		t.Error("Exporter should not be present")
 	}
 }
-

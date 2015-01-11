@@ -3,7 +3,7 @@ package test
 
 import (
 
-"testing"
+	"testing"
 
 	"github.com/joernweissenborn/aursir4go"
 	"github.com/joernweissenborn/aursir4go/Example/keys"
@@ -90,106 +90,106 @@ func TestFunCall121(T *testing.T) {
 
 
 func TestFunCallN21(T *testing.T) {
-importer1, imp1 := testimporter()
-defer importer1.Close()
-imp1.ListenToFunction("SayHello")
-importer2, imp2 := testimporter()
-imp2.ListenToFunction("SayHello")
-defer importer2.Close()
-exporter, exp := testexporter()
-defer exporter.Close()
+	importer1, imp1 := testimporter()
+	defer importer1.Close()
+	imp1.ListenToFunction("SayHello")
+	importer2, imp2 := testimporter()
+	imp2.ListenToFunction("SayHello")
+	defer importer2.Close()
+	exporter, exp := testexporter()
+	defer exporter.Close()
 
-imp2.CallFunction(keys.HelloAurSirAppKey.Functions[0].Name, keys.SayHelloReq{"AHOI"}, calltypes.MANY2ONE)
-req := <-exp.Request
-var SayHelloReq keys.SayHelloReq
-req.Decode(&SayHelloReq)
-if SayHelloReq.Greeting != "AHOI" {
-T.Error("got wrong request parameter")
+	imp2.CallFunction(keys.HelloAurSirAppKey.Functions[0].Name, keys.SayHelloReq{"AHOI"}, calltypes.MANY2ONE)
+	req := <-exp.Request
+	var SayHelloReq keys.SayHelloReq
+	req.Decode(&SayHelloReq)
+	if SayHelloReq.Greeting != "AHOI" {
+		T.Error("got wrong request parameter")
+	}
+	err := exp.Reply(&req, keys.SayHelloRes{"MOINSEN"})
+	if err != nil {
+		T.Error(err)
+	}
+	var res1 keys.SayHelloRes
+	imp1.Listen().Decode(&res1)
+	log.Println("res1", res1)
+	if res1.Answer != "MOINSEN" {
+		T.Error("got wrong result parameter")
+	}
+	var res2 keys.SayHelloRes
+	imp2.Listen().Decode(&res2)
+	log.Println("res2", res2)
+	if res2.Answer != "MOINSEN" {
+		T.Error("got wrong result parameter")
+	}
 }
-err := exp.Reply(&req, keys.SayHelloRes{"MOINSEN"})
-if err != nil {
-T.Error(err)
-}
-var res1 keys.SayHelloRes
-imp1.Listen().Decode(&res1)
-log.Println("res1", res1)
-if res1.Answer != "MOINSEN" {
-T.Error("got wrong result parameter")
-}
-var res2 keys.SayHelloRes
-imp2.Listen().Decode(&res2)
-log.Println("res2", res2)
-if res2.Answer != "MOINSEN" {
-T.Error("got wrong result parameter")
-}
-}
-/*
+
 func TestDelayedExporter(T *testing.T) {
-importer, imp := testimporter()
-defer importer.Close()
+	importer, imp := testimporter()
+	defer importer.Close()
 
-res, _ := imp.CallFunction(aursir4go.HelloAurSirAppKey.Functions[0].Name, aursir4go.SayHelloReq{"AHOI"}, aursir4go.ONE2ONE)
-exporter, exp := testexporter()
-defer exporter.Close()
-req := <-exp.Request
-var SayHelloReq aursir4go.SayHelloReq
-req.Decode(&SayHelloReq)
-log.Println(SayHelloReq)
+	res, _ := imp.CallFunction(keys.HelloAurSirAppKey.Functions[0].Name, keys.SayHelloReq{"AHOI"}, calltypes.ONE2ONE)
+	exporter, exp := testexporter()
+	defer exporter.Close()
+	req := <-exp.Request
+	var SayHelloReq keys.SayHelloReq
+	req.Decode(&SayHelloReq)
+	log.Println(SayHelloReq)
 
-if SayHelloReq.Greeting != "AHOI" {
-T.Error("got wrong request parameter")
+	if SayHelloReq.Greeting != "AHOI" {
+		T.Error("got wrong request parameter")
+	}
+	err := exp.Reply(&req, keys.SayHelloRes{"MOINSEN"})
+	if err != nil {
+		T.Error(err)
+	}
+	var result keys.SayHelloRes
+	(<-res).Decode(&result)
+	log.Println(result)
+	if result.Answer != "MOINSEN" {
+		T.Error("got wrong result parameter")
+	}
 }
-err := exp.Reply(&req, aursir4go.SayHelloRes{"MOINSEN"})
-if err != nil {
-T.Error(err)
-}
-var result aursir4go.SayHelloRes
-(<-res).Decode(&result)
-log.Println(result)
-if result.Answer != "MOINSEN" {
-T.Error("got wrong result parameter")
-}
-}
-
 func TestTagging(T *testing.T) {
-importer, imp := testimporter()
-defer importer.Close()
-exporter, exp := testexporter()
-defer exporter.Close()
-time.Sleep(100 * time.Millisecond)
-if imp.Connected == false {
-T.Error("could not connect to appkey")
-}
+	importer, imp := testimporter()
+	defer importer.Close()
+	exporter, exp := testexporter()
+	defer exporter.Close()
+	time.Sleep(100 * time.Millisecond)
+	if imp.Exported() == false {
+		T.Error("could not connect to appkey")
+	}
 
-imp.UpdateTags([]string{"testtag"})
-time.Sleep(300 * time.Millisecond)
-if imp.Connected == true {
-T.Error("could not disconnect from appkey")
-}
-exp.UpdateTags([]string{"testtag"})
+	imp.UpdateTags([]string{"testtag"})
+	time.Sleep(300 * time.Millisecond)
+	if imp.Exported() == true {
+		T.Error("could not disconnect from appkey")
+	}
+	exp.UpdateTags([]string{"testtag"})
 
-time.Sleep(300 * time.Millisecond)
-if imp.Connected == false {
-T.Error("could not connect to appkey")
-}
-exp.UpdateTags([]string{"testtag", "anothertag"})
+	time.Sleep(300 * time.Millisecond)
+	if imp.Exported() == false {
+		T.Error("could not connect to appkey")
+	}
+	exp.UpdateTags([]string{"testtag", "anothertag"})
 
-time.Sleep(300 * time.Millisecond)
-if imp.Connected == false {
-T.Error("could not connect to appkey")
-}
+	time.Sleep(300 * time.Millisecond)
+	if imp.Exported() == false {
+		T.Error("could not connect to appkey")
+	}
 
-exp.UpdateTags([]string{"anothertag"})
-time.Sleep(300 * time.Millisecond)
-if imp.Connected == true {
-T.Error("could not disconnect from appkey")
+	exp.UpdateTags([]string{"anothertag"})
+	time.Sleep(300 * time.Millisecond)
+	if imp.Exported() == true {
+		T.Error("could not disconnect from appkey")
+	}
+	imp.UpdateTags([]string{})
+	time.Sleep(300 * time.Millisecond)
+	if imp.Exported() == false {
+		T.Error("could not connect to appkey")
+	}
 }
-imp.UpdateTags([]string{})
-time.Sleep(300 * time.Millisecond)
-if imp.Connected == false {
-T.Error("could not connect to appkey")
-}
-}
+/*/
 
 func TestCallChain(T *testing.T) {
 importer, imp := testimporter()

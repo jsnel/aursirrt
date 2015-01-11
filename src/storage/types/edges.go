@@ -8,7 +8,7 @@ TAG_EDGE          = "HAS_TAG"
 implements_edge   = "IMPLEMENTS"
 AWAITING_JOB_EDGE = "AWAITING_JOB"
 DOING_JOB_EDGE    = "DOING_JOB"
-listen_edge       = "LISTEN"
+LISTEN_EDGE       = "LISTEN"
 callchain_edge = "CHAINCALL"
 result_edge = "HAS_RESULT"
 )

@@ -56,7 +56,7 @@ func (a AppKey) GetId() string {
 }
 func (a AppKey) GetExporter() (exporter []Export) {
 	exporter = []Export{}
-	c := make(chan string)
+	c := make(chan string,1)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
 		for _, ke := range sc.GetVertex(kid).Incoming {
@@ -74,7 +74,7 @@ func (a AppKey) GetExporter() (exporter []Export) {
 }
 func (a AppKey) GetImporter() (importer []Import) {
 	importer = []Import{}
-	c := make(chan string)
+	c := make(chan string,1)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
 		for _, ke := range sc.GetVertex(kid).Incoming {
@@ -87,6 +87,30 @@ func (a AppKey) GetImporter() (importer []Import) {
 	})
 	for eid := range c {
 		importer = append(importer,GetImportById(eid,a.agent))
+	}
+	return
+}
+
+func (a AppKey) GetListener(function string,export Export) (importer []Import) {
+	importer = []Import{}
+	c := make(chan string,1)
+	kid := a.GetId()
+	a.agent.Read(func (sc *storage.StorageCore){
+		for _, ke := range sc.GetVertex(kid).Incoming {
+			if ke.Label == LISTEN_EDGE  {
+				if ke.Properties.(string) == function {
+					c<-ke.Tail.Id
+				}
+				}
+			}
+
+		close(c)
+	})
+	for eid := range c {
+		imp := GetImportById(eid,a.agent)
+		if export.HasTags(imp.GetTagNames()) {
+			importer = append(importer,imp)
+		}
 	}
 	return
 }
