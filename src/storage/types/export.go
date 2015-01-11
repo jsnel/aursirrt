@@ -18,8 +18,8 @@ type Export struct {
 }
 
 
-func GetExport(appid string, key appkey.AppKey, tags []string, agent storage.StorageAgent) Export {
-	e :=  Export{agent,appid,key,tags,""}
+func GetExport(appid string, key appkey.AppKey, tags []string,id string, agent storage.StorageAgent) Export {
+	e :=  Export{agent,appid,key,tags,id}
 	return e
 }
 func GetExportById(id string, agent storage.StorageAgent) Export {
@@ -72,10 +72,13 @@ func (e *Export) Add() {
 
 	k.Create()
 	keyid := k.GetId()
+	if e.id == "" {
+		e.id = storage.GenerateUuid()
+	}
 	e.agent.Write(func(sc *storage.StorageCore) {
 		av := sc.InMemoryGraph.GetVertex(a.Id)
 		kv := sc.InMemoryGraph.GetVertex(keyid)
-		ev := sc.InMemoryGraph.CreateVertex(storage.GenerateUuid(), nil)
+		ev := sc.InMemoryGraph.CreateVertex(e.id, nil)
 
 
 		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), EXPORT_EDGE, kv, ev, nil)

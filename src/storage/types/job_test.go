@@ -11,10 +11,10 @@ import (
 func TestJob(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
-	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
+	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"},false}
 	app.Create(dockmsg,testconn{})
 
-	Import := GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	Import := GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	Import.Add()
 	testrequest.ImportId = Import.GetId()
 	job := GetJobFromRequest(testrequest,agent)
@@ -29,7 +29,7 @@ func TestJob(t *testing.T){
 	eapp := GetApp("testexp",agent)
 	eapp.Create(dockmsg,testconn{})
 
-	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	export.Add()
 	job.Assign(export)
 

@@ -9,22 +9,22 @@ import (
 func TestImport(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
-	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
+	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"},false}
 	app.Create(dockmsg,testconn{})
 
-	Import := GetImport("",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	Import := GetImport("",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	Import.Add()
 
 	if Import.GetId() != "" {
 		t.Error("Created Import for non existing app")
 	}
-	Import = GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	Import = GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	Import.Add()
 
 	if Import.GetId() == "" {
 		t.Error("Could not add Import")
 	}
-	Import = GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	Import = GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 
 	if Import.GetId() == "" {
 		t.Error("Could not retrieve Import")
@@ -45,7 +45,7 @@ func TestImport(t *testing.T){
 	eapp := GetApp("testexp",agent)
 	eapp.Create(dockmsg,testconn{})
 
-	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	export.Add()
 	if !Import.HasExporter() {
 		t.Error("Exporter should be present")
@@ -55,11 +55,11 @@ func TestImport(t *testing.T){
 func TestListen(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
-	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
+	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"},false}
 	app.Create(dockmsg,testconn{})
 
 
-	Import := GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	Import := GetImport("testid",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	Import.Add()
 
 	if Import.GetId() == "" {
@@ -69,7 +69,7 @@ func TestListen(t *testing.T){
 	eapp := GetApp("testexp",agent)
 	eapp.Create(dockmsg,testconn{})
 
-	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	export := GetExport("testexp",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	export.Add()
 
 	Import.StartListenToFunction("testfun")

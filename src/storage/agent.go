@@ -27,3 +27,13 @@ func (a StorageAgent) Read(fun StorageFunc) {
 	a.storageReadChannel <- fun
 }
 
+
+func (a StorageAgent) GetId() string {
+	c := make(chan string)
+	defer close(c)
+	a.Read( func(sc *StorageCore) {
+		c<-sc.Root.Id
+	})
+	return <-c
+}
+

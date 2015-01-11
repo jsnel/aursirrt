@@ -5,6 +5,7 @@ import (
 	"storage"
 	"github.com/joernweissenborn/aursir4go/messages"
 	"dock/connection"
+	"fmt"
 )
 
 type appproperties struct {
@@ -21,12 +22,45 @@ func GetApp(Id string, Agent storage.StorageAgent) App {
 	return App{Agent,Id}
 }
 
+func GetNodes(agent storage.StorageAgent) []App {
+
+	c := make(chan string)
+	agent.Read(func (sc *storage.StorageCore){
+		for _, nodeedge := range sc.Root.Outgoing {
+			if nodeedge.Label == KNOWN_NODE_EDGE {
+				c <- nodeedge.Head.Id
+			}
+		}
+		close(c)
+	})
+	nodes := []App{}
+	for nodeid := range c {
+		nodes = append(nodes,GetApp(nodeid,agent))
+	}
+	return nodes
+}
+
+
+
 func (app App) Exists() bool {
 
 	c := make(chan bool)
 	defer close(c)
 	app.agent.Read(func (sc *storage.StorageCore){
 		c <- sc.GetVertex(app.Id) != nil
+	})
+
+	return <- c
+}
+
+func (app App) IsNode() bool {
+	if !app.Exists() {
+		return false
+	}
+	c := make(chan bool)
+	defer close(c)
+	app.agent.Read(func (sc *storage.StorageCore){
+		c <- sc.GetVertex(app.Id).Properties.(appproperties).dockmsg.Node
 	})
 
 	return <- c
@@ -46,13 +80,18 @@ func (app App) GetConnection() connection.Connection {
 
 func (app App) Create(DockMessage messages.DockMessage, Connection connection.Connection) bool{
 	if app.Exists() {
+		printDebug(fmt.Sprint("Cannot add app",app.Id))
 		return false
 	}
 	c := make(chan struct{})
 	defer close(c)
+
 	app.agent.Write(func (sc *storage.StorageCore){
 		log.Println("STORAGECORE","Assinging ID to App",DockMessage.AppName,"->", app.Id)
-		sc.CreateVertex(app.Id, appproperties{DockMessage,Connection})
+		av := sc.CreateVertex(app.Id, appproperties{DockMessage,Connection})
+		if DockMessage.Node {
+			sc.CreateEdge(storage.GenerateUuid(), KNOWN_NODE_EDGE,av, sc.Root,nil)
+		}
 		c <- struct{}{}
 	})
 

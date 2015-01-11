@@ -35,18 +35,28 @@ func (p DockProcessor) Process() {
 			return
 		}
 		app := types.GetApp(p.AppId, p.GetAgent())
-		ok := app.Create(dmsg, p.Connection)
-		conn := app.GetConnection()
-		err = conn.Init()
-		if err != nil {
-			return
-		}
-		var sp SendMessageProcessor
-		sp.App = app
-		sp.Msg = messages.DockedMessage{ok}
-		sp.GenericProcessor = processor.GetGenericProcessor()
-		p.SpawnProcess(sp)
+		if !app.Exists() {
+			ok := app.Create(dmsg, p.Connection)
+			conn := app.GetConnection()
+			err = conn.Init()
+			if err != nil {
+				return
+			}
+			if app.IsNode() {
+				var sp SendMessageProcessor
+				sp.App = app
+				sp.Msg = messages.DockMessage{"runtime",[]string{"JSON"},true}
+				sp.GenericProcessor = processor.GetGenericProcessor()
+				p.SpawnProcess(sp)
+			}
 
+			var sp SendMessageProcessor
+			sp.App = app
+			sp.Msg = messages.DockedMessage{ok}
+			sp.GenericProcessor = processor.GetGenericProcessor()
+			p.SpawnProcess(sp)
+
+		}
 	}
 
 }

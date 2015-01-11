@@ -10,22 +10,22 @@ import (
 func TestExport(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
-	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
+	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"},false}
 	app.Create(dockmsg,testconn{})
 
-	export := GetExport("",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	export := GetExport("",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	export.Add()
 
 	if export.GetId() != "" {
 		t.Error("Created export for non existing app")
 	}
-	export = GetExport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	export = GetExport("testid",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	export.Add()
 
 	if export.GetId() == "" {
 		t.Error("Could not add export")
 	}
-	export = GetExport("testid",keys.HelloAurSirAppKey, []string{"one","two"},agent)
+	export = GetExport("testid",keys.HelloAurSirAppKey, []string{"one","two"},"",agent)
 	export.Add()
 
 	if export.GetId() == "" {

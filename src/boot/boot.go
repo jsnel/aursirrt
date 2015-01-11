@@ -6,7 +6,7 @@ import (
 	"storage"
 	"dock"
 	"dock/dockzmq"
-	"dock/dockwebsockets"
+	"cmdlineinterface"
 )
 
 const (
@@ -18,13 +18,29 @@ func Boot(){
 	mprint("AurSir RT starting")
 
 	a := bootStorage()
-
+	                   id:= a.GetId()
 	p := bootCore(a)
 	var z dockzmq.DockerZmq
-	bootDocker(p, z)
+	bootDocker(p, z, id)
 
-	var w dockwebsockets.DockerWebSockets
-	bootDocker(p,w)
+//	var w dockwebsockets.DockerWebSockets
+//	bootDocker(p,w)
+
+	bootCmdlineinterface(p)
+}
+func BootWithoutCmdlineinterface(){
+
+	mprint("AurSir RT starting")
+
+	a := bootStorage()
+
+	id:= a.GetId()
+	p := bootCore(a)
+	var z dockzmq.DockerZmq
+	bootDocker(p, z, id)
+
+	//	var w dockwebsockets.DockerWebSockets
+//	bootDocker(p,w)
 }
 
 func bootStorage() storage.StorageAgent {
@@ -45,10 +61,18 @@ func bootCore(a storage.StorageAgent) (processingChan chan processor.Processor){
 	return
 }
 
-func bootDocker(p chan processor.Processor, d dock.Docker) {
+func bootDocker(p chan processor.Processor, d dock.Docker, id string) {
 	mprint("Launching Dock")
 	agent := dock.NewAgent(p)
-	d.Launch(agent)
+	d.Launch(agent,id)
+
+}
+
+
+func bootCmdlineinterface(p chan processor.Processor) {
+	mprint("Launching Cmdlineinterface")
+	cli := cmdlineinterface.CmdLineInterface{}
+	cli.Run()
 
 }
 

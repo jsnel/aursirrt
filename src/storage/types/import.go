@@ -19,9 +19,8 @@ type Import struct {
 }
 
 
-func GetImport(appid string, key appkey.AppKey, tags []string, agent storage.StorageAgent) Import {
-	i :=  Import{agent,appid,key,tags,""}
-	i.setId()
+func GetImport(appid string, key appkey.AppKey, tags []string, id string, agent storage.StorageAgent) Import {
+	i :=  Import{agent,appid,key,tags,id}
 	return i
 }
 
@@ -82,12 +81,15 @@ func (i *Import) Add() {
 		return
 	}
 	k := GetAppKey(i.key, i.agent)
+	if i.id == "" {
+		i.id = storage.GenerateUuid()
+	}
 	k.Create()
 	keyid := k.GetId()
 	i.agent.Write(func(sc *storage.StorageCore) {
 		av := sc.InMemoryGraph.GetVertex(a.Id)
 		kv := sc.InMemoryGraph.GetVertex(keyid)
-		iv := sc.InMemoryGraph.CreateVertex(storage.GenerateUuid(), nil)
+		iv := sc.InMemoryGraph.CreateVertex(i.id, nil)
 
 		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), IMPORT_EDGE, kv, iv, nil)
 		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), IMPORT_EDGE, iv, av, nil)
@@ -196,8 +198,11 @@ func (e *Import) setId() {
 	e.id = <- c
 	return
 }
-func (e Import) GetId() string {
-	return e.id
+func (i Import) GetId() string {
+	if i.id == ""{
+		i.setId()
+	}
+	return i.id
 }
 
 func (i *Import) UpdateTags(tags []string){

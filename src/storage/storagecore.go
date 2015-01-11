@@ -22,7 +22,7 @@ func (sc *StorageCore) ExecuteFunc(storFunc StorageFunc){
 func (sc *StorageCore) Run(storageWriteChan,storageReadChan chan StorageFunc){
 	sc.InMemoryGraph = propertygraph2go.New()
 
-	sc.Root = sc.InMemoryGraph.CreateVertex("root",nil)
+	sc.Root = sc.InMemoryGraph.CreateVertex(GenerateUuid(),nil)
 
 	ok := true
 

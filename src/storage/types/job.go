@@ -4,7 +4,6 @@ import (
 	"storage"
 	"fmt"
 	"github.com/joernweissenborn/aursir4go/messages"
-	"log"
 )
 
 type jobproperties struct {
@@ -37,7 +36,6 @@ func GetJobById(id string, agent storage.StorageAgent)(Job Job){
 	defer close(c2)
 	Job.agent.Read(func (sc *storage.StorageCore){
 		jv := sc.GetVertex(id)
-		log.Println(jv)
 		if jv == nil {
 			c <- nil
 			c2 <- nil

@@ -13,7 +13,7 @@ func TestAppCreation(t *testing.T){
 	if app.Exists() {
 		t.Error("Found non existing app")
 	}
-	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
+	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"},false}
 	if !app.Create(dockmsg,testconn{}) {
 		t.Error("Could not create app")
 	}
@@ -28,7 +28,7 @@ func TestAppCreation(t *testing.T){
 func TestAppRemoval(t *testing.T){
 	agent := storage.NewAgent()
 	app := GetApp("testid",agent)
-	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"}}
+	dockmsg := messages.DockMessage{"HelloWorld",[]string{"JSON"},false}
 	app.Create(dockmsg,testconn{})
 	app.Remove()
 	if app.Exists() {

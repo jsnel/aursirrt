@@ -18,7 +18,7 @@ type AddImportProcessor struct {
 
 func (p AddImportProcessor) Process() {
 
-	Import := types.GetImport(p.AppId,p.AddImportMsg.AppKey, p.AddImportMsg.Tags,p.GetAgent())
+	Import := types.GetImport(p.AppId,p.AddImportMsg.AppKey, p.AddImportMsg.Tags ,p.AddImportMsg.ImportId,p.GetAgent())
 	Import.Add()
 	var smp SendMessageProcessor
 	smp.App = Import.GetApp()

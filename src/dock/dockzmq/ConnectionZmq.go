@@ -4,27 +4,35 @@ import (
 	"strconv"
 	zmq "github.com/pebbe/zmq4"
 	"fmt"
+	"config"
 )
 
 
 type ConnectionZmq struct {
 	port int64
 	skt *zmq.Socket
+	ip string
+	id string
 }
 
-func NewConnection(port int64) ConnectionZmq{
-	return ConnectionZmq{port, nil}
+func NewConnection(port int64, id string) ConnectionZmq{
+	return ConnectionZmq{port, nil,"localhost",id}
+}
+
+func NewRemoteConnection(ip string, id string, port int64) ConnectionZmq{
+	return ConnectionZmq{port, nil,ip,id}
 }
 
 func (cz *ConnectionZmq) Init() (err error) {
 	cz.skt, _ = zmq.NewSocket(zmq.DEALER)
-	cz.skt.SetIdentity("AURSIR_RT")
+	cz.skt.SetIdentity(cz.id)
 
 	cz.skt.SetSndtimeo(1000)
 	port := strconv.FormatInt(cz.port,10)
+	printDebug("ZMQAppDocker opening channel to ip "+cz.ip)
 	printDebug("ZMQAppDocker opening channel to port "+port)
 
-	err = cz.skt.Connect("tcp://localhost:" + port)
+	err = cz.skt.Connect(fmt.Sprintf("tcp://%s:%d",cz.ip, cz.port))
 
 	return
 
@@ -32,10 +40,14 @@ func (cz *ConnectionZmq) Init() (err error) {
 
 func (cz ConnectionZmq) Send(msgtype int64, codec string,msg []byte) (err error){
 	_,err = cz.skt.SendMessage(
-		[]string{strconv.FormatInt(msgtype,10),codec,string(msg)},0)
+		[]string{strconv.FormatInt(msgtype,10),codec,string(msg), strconv.FormatInt(config.Zmqport,10)},0)
 
 	if err != nil {
 		mprint(fmt.Sprintf("Error on zqm port %d, closing:",cz.port,err))
 	}
+	return
+}
+func (cz ConnectionZmq) Close() (err error){
+	err = cz.skt.Close()
 	return
 }

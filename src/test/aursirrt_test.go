@@ -10,9 +10,12 @@ import (
 	"time"
 	"log"
 	"github.com/joernweissenborn/aursir4go/calltypes"
+	"boot"
 )
 
 func TestInitCloseIface(t *testing.T) {
+	boot.BootWithoutCmdlineinterface()
+
 	iface , err := aursir4go.NewInterface("test")
 	if err != nil {
 		t.Error("Coud not start interface",err)
