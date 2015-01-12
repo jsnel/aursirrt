@@ -4,23 +4,23 @@ import (
 	"strconv"
 	zmq "github.com/pebbe/zmq4"
 	"fmt"
-	"config"
 )
 
 
 type ConnectionZmq struct {
+	myport int64
 	port int64
 	skt *zmq.Socket
 	ip string
 	id string
 }
 
-func NewConnection(port int64, id string) ConnectionZmq{
-	return ConnectionZmq{port, nil,"localhost",id}
+func NewConnection(homeport, port int64, id string) ConnectionZmq{
+	return ConnectionZmq{homeport, port, nil,"localhost",id}
 }
 
-func NewRemoteConnection(ip string, id string, port int64) ConnectionZmq{
-	return ConnectionZmq{port, nil,ip,id}
+func NewRemoteConnection(ip string, id string, port, homeport int64) ConnectionZmq{
+	return ConnectionZmq{homeport,port, nil,ip,id}
 }
 
 func (cz *ConnectionZmq) Init() (err error) {
@@ -40,7 +40,7 @@ func (cz *ConnectionZmq) Init() (err error) {
 
 func (cz ConnectionZmq) Send(msgtype int64, codec string,msg []byte) (err error){
 	_,err = cz.skt.SendMessage(
-		[]string{strconv.FormatInt(msgtype,10),codec,string(msg), strconv.FormatInt(config.Zmqport,10)},0)
+		[]string{strconv.FormatInt(msgtype,10),codec,string(msg), strconv.FormatInt(cz.myport,10)},0)
 
 	if err != nil {
 		mprint(fmt.Sprintf("Error on zqm port %d, closing:",cz.port,err))

@@ -7,6 +7,8 @@ import (
 	"dock"
 	"dock/dockzmq"
 	"cmdlineinterface"
+	"flag"
+	"config"
 )
 
 const (
@@ -16,11 +18,13 @@ const (
 func Boot(){
 
 	mprint("AurSir RT starting")
+	flag.Parse()
 
 	a := bootStorage()
 	                   id:= a.GetId()
 	p := bootCore(a)
 	var z dockzmq.DockerZmq
+	z.SetPort(int64(*config.Zmqport))
 	bootDocker(p, z, id)
 
 //	var w dockwebsockets.DockerWebSockets
@@ -31,12 +35,14 @@ func Boot(){
 func BootWithoutCmdlineinterface(){
 
 	mprint("AurSir RT starting")
-
+	flag.Parse()
 	a := bootStorage()
 
 	id:= a.GetId()
 	p := bootCore(a)
 	var z dockzmq.DockerZmq
+	z.SetPort(int64(*config.Zmqport))
+
 	bootDocker(p, z, id)
 
 	//	var w dockwebsockets.DockerWebSockets

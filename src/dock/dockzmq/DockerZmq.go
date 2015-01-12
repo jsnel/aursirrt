@@ -20,11 +20,12 @@ type DockerZmq struct {
 	id string
 	ip string
 	appLastPing map[string]time.Time
+	homeport int64
 }
 
 func (dzmq DockerZmq) Launch(agent dock.DockAgent, id string) (err error) {
 
-	mprint(fmt.Sprint("Launching on port",config.Zmqport))
+	mprint(fmt.Sprint("Launching on port",dzmq.homeport))
 	dzmq.agent = agent
 	dzmq.id = id
 	dzmq.appLastPing = map[string]time.Time{}
@@ -35,7 +36,7 @@ func (dzmq DockerZmq) Launch(agent dock.DockAgent, id string) (err error) {
 		return
 	}
 
-	dzmq.skt.Bind("tcp://*:"+strconv.FormatInt(config.Zmqport,10))
+	dzmq.skt.Bind("tcp://*:"+strconv.FormatInt(dzmq.homeport,10))
 
 	go dzmq.listen()
 	go dzmq.updPingListener()
@@ -44,6 +45,10 @@ func (dzmq DockerZmq) Launch(agent dock.DockAgent, id string) (err error) {
 	return
 }
 
+func (dzmq *DockerZmq) SetPort(homeport int64){
+	dzmq.homeport = homeport
+
+}
 func (dzmq *DockerZmq) listen() {
 
 	mprint("ZMQAppDocker listening")
@@ -67,7 +72,7 @@ func (dzmq *DockerZmq) listen() {
 					encmsg := []byte(msg[3])
 					port, err := strconv.ParseInt(msg[4], 10, 64)
 					if err == nil {
-						conn := NewConnection(port,dzmq.id)
+						conn := NewConnection(dzmq.homeport, port,dzmq.id)
 						dzmq.addAppPing(senderId)
 						dzmq.agent.InitDocking(senderId, codec, encmsg, &conn)
 					}
@@ -124,7 +129,7 @@ func (dzmq *DockerZmq) checkInAppPing(AppId string, ip string, Port string) {
 		dzmq.appLastPing[AppId] = time.Now()
 	} else if AppId!= dzmq.id{
 		port,_ := strconv.ParseInt(Port,10,64)
-		conn := NewRemoteConnection(ip, dzmq.id,port)
+		conn := NewRemoteConnection(ip, dzmq.id,port, dzmq.homeport)
 		err := conn.Init()
 		if err != nil {
 			return
