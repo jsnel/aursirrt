@@ -35,8 +35,10 @@ func (p DockProcessor) Process() {
 			return
 		}
 		app := types.GetApp(p.AppId, p.GetAgent())
-		if !app.Exists() {
-			ok := app.Create(dmsg, p.Connection)
+		ok := app.Create(dmsg, p.Connection)
+		if ok {
+			app.Lock()
+			defer app.Unlock()
 			conn := app.GetConnection()
 			err = conn.Init()
 			if err != nil {
@@ -50,12 +52,39 @@ func (p DockProcessor) Process() {
 				p.SpawnProcess(sp)
 			}
 
-			var sp SendMessageProcessor
-			sp.App = app
-			sp.Msg = messages.DockedMessage{ok}
-			sp.GenericProcessor = processor.GetGenericProcessor()
-			p.SpawnProcess(sp)
+		}
 
+		var sp SendMessageProcessor
+		sp.App = app
+		sp.Msg = messages.DockedMessage{ok}
+		sp.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(sp)
+
+		if ok && app.IsNode() {
+			for _, localapp := range types.GetApps(p.GetAgent()){
+			 	for _, imp := range localapp.GetImports() {
+					var m messages.AddImportMessage
+					m.AppKey = imp.GetAppKey().GetKey()
+					m.Tags = imp.GetTagNames()
+					m.ImportId = imp.GetId()
+					var sp SendMessageProcessor
+					sp.App = app
+					sp.Msg = m
+					sp.GenericProcessor = processor.GetGenericProcessor()
+					p.SpawnProcess(sp)
+				}
+				for _, exp := range localapp.GetExports() {
+					var m messages.AddExportMessage
+					m.AppKey = exp.GetAppKey().GetKey()
+					m.Tags = exp.GetTagNames()
+					m.ExportId = exp.GetId()
+					var sp SendMessageProcessor
+					sp.App = app
+					sp.Msg = m
+					sp.GenericProcessor = processor.GetGenericProcessor()
+					p.SpawnProcess(sp)
+				}
+		}
 		}
 	}
 

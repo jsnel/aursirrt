@@ -17,15 +17,19 @@ type AddExportProcessor struct {
 }
 
 func (p AddExportProcessor) Process() {
-	             printDebug("AddExport")
+	printDebug("AddExport")
 	Export := types.GetExport(p.AppId,p.AddExportMsg.AppKey,p.AddExportMsg.Tags,p.AddExportMsg.ExportId,p.GetAgent())
 	Export.Add()
 	app := Export.GetApp()
-	var smp SendMessageProcessor
-	smp.App = app
-	smp.Msg = messages.ExportAddedMessage{Export.GetId()}
-	smp.GenericProcessor = processor.GetGenericProcessor()
-	p.SpawnProcess(smp)
+
+	if !app.IsNode() {
+		var smp SendMessageProcessor
+		smp.App = app
+		smp.Msg = messages.ExportAddedMessage{Export.GetId()}
+		smp.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(smp)
+	}
+
 	var pjp PendingJobProcessor
 	pjp.Appkey = Export.GetAppKey()
 	pjp.GenericProcessor = processor.GetGenericProcessor()
@@ -34,5 +38,18 @@ func (p AddExportProcessor) Process() {
 	uesp.AppKey = Export.GetAppKey()
 	uesp.GenericProcessor = processor.GetGenericProcessor()
 	p.SpawnProcess(uesp)
+
+	if !app.IsNode() {
+		p.AddExportMsg.ExportId = Export.GetId()
+		for _, node := range types.GetNodes(p.GetAgent()){
+			node.Lock()
+			var smp SendMessageProcessor
+			smp.App = app
+			smp.Msg = p.AddExportMsg
+			smp.GenericProcessor = processor.GetGenericProcessor()
+			p.SpawnProcess(smp)
+			node.Unlock()
+		}
+	}
 }
 

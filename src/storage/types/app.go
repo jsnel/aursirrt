@@ -6,11 +6,13 @@ import (
 	"github.com/joernweissenborn/aursir4go/messages"
 	"dock/connection"
 	"fmt"
+	"sync"
 )
 
 type appproperties struct {
-	dockmsg messages.DockMessage
+	dockmsg    messages.DockMessage
 	connection connection.Connection
+	*sync.Mutex
 }
 
 type App struct {
@@ -40,6 +42,25 @@ func GetNodes(agent storage.StorageAgent) []App {
 	return nodes
 }
 
+func GetApps(agent storage.StorageAgent) []App {
+
+	c := make(chan string)
+	agent.Read(func (sc *storage.StorageCore){
+		for _, nodeedge := range sc.Root.Outgoing {
+			if nodeedge.Label == KNOWN_APP_EDGE {
+				c <- nodeedge.Head.Id
+			}
+		}
+		close(c)
+	})
+	apps := []App{}
+	for appid := range c {
+		apps = append(apps,GetApp(appid,agent))
+	}
+	return apps
+
+}
+
 
 
 func (app App) Exists() bool {
@@ -67,12 +88,26 @@ func (app App) IsNode() bool {
 }
 
 
+func (app App) Lock() {
+	app.getProperties().Lock()
+}
+
+func (app App) Unlock() {
+	app.getProperties().Unlock()
+}
+
 func (app App) GetConnection() connection.Connection {
 
-	c := make(chan connection.Connection)
+	props := app.getProperties()
+	return props.connection
+}
+
+func (app App) getProperties() appproperties {
+
+	c := make(chan appproperties)
 	defer close(c)
 	app.agent.Read(func (sc *storage.StorageCore){
-		c <- sc.GetVertex(app.Id).Properties.(appproperties).connection
+		c <- sc.GetVertex(app.Id).Properties.(appproperties)
 	})
 
 	return <- c
@@ -85,13 +120,16 @@ func (app App) Create(DockMessage messages.DockMessage, Connection connection.Co
 	}
 	c := make(chan struct{})
 	defer close(c)
-
+	mutex := &sync.Mutex{}
+	edge := KNOWN_APP_EDGE
+	if DockMessage.Node {
+		edge = KNOWN_NODE_EDGE
+	}
 	app.agent.Write(func (sc *storage.StorageCore){
 		log.Println("STORAGECORE","Assinging ID to App",DockMessage.AppName,"->", app.Id)
-		av := sc.CreateVertex(app.Id, appproperties{DockMessage,Connection})
-		if DockMessage.Node {
-			sc.CreateEdge(storage.GenerateUuid(), KNOWN_NODE_EDGE,av, sc.Root,nil)
-		}
+		av := sc.CreateVertex(app.Id, appproperties{DockMessage,Connection,mutex})
+			sc.CreateEdge(storage.GenerateUuid(), edge,av, sc.Root,nil)
+
 		c <- struct{}{}
 	})
 

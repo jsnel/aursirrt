@@ -15,6 +15,9 @@ func GetAppKey(appkey appkey.AppKey, agent storage.StorageAgent) AppKey{
 	return AppKey{agent,appkey}
 }
 
+func (a AppKey) GetKey() appkey.AppKey {
+	return a.appkey
+}
 func (a AppKey) Exists() bool {
 
 	c := make(chan bool)

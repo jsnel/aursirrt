@@ -20,13 +20,23 @@ func (p AddImportProcessor) Process() {
 
 	Import := types.GetImport(p.AppId,p.AddImportMsg.AppKey, p.AddImportMsg.Tags ,p.AddImportMsg.ImportId,p.GetAgent())
 	Import.Add()
-	var smp SendMessageProcessor
-	smp.App = Import.GetApp()
-	smp.Msg = messages.ImportAddedMessage{Import.GetId(),Import.HasExporter()}
-	smp.GenericProcessor = processor.GetGenericProcessor()
-	p.SpawnProcess(smp)
-
-
-
+	app := Import.GetApp()
+	if !app.IsNode() {
+		var smp SendMessageProcessor
+		smp.App = app
+		smp.Msg = messages.ImportAddedMessage{Import.GetId(),Import.HasExporter()}
+		smp.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(smp)
+		p.AddImportMsg.ImportId = Import.GetId()
+		for _, node := range types.GetNodes(p.GetAgent()){
+			node.Lock()
+			var smp SendMessageProcessor
+			smp.App = app
+			smp.Msg = p.AddImportMsg
+			smp.GenericProcessor = processor.GetGenericProcessor()
+			p.SpawnProcess(smp)
+			node.Unlock()
+		}
+	}
 }
 

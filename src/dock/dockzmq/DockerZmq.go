@@ -10,7 +10,6 @@ import (
 	"time"
 	"encoding/json"
 	"strings"
-	"config"
 	"fmt"
 )
 
@@ -41,7 +40,7 @@ func (dzmq DockerZmq) Launch(agent dock.DockAgent, id string) (err error) {
 	go dzmq.listen()
 	go dzmq.updPingListener()
 	kill := false
-	go pingUdp(id,&kill)
+	go pingUdp(id, dzmq.homeport,&kill)
 	return
 }
 
@@ -165,7 +164,7 @@ func (dzmq *DockerZmq) closeConnection(id string){
 
 
 
-func pingUdp(UUID string, killFlag *bool){
+func pingUdp(UUID string, port int64, killFlag *bool){
 
 	var pingtime = 8*time.Second
 
@@ -188,7 +187,8 @@ func pingUdp(UUID string, killFlag *bool){
 		if (*killFlag){
 			break
 		}
-		con.Write([]byte(fmt.Sprintf("%s:%d",UUID,config.Zmqport)))
+
+		con.Write([]byte(fmt.Sprintf("%s:%d",UUID,port)))
 		t.Reset(pingtime)
 	}
 	log.Println("Stopping UDP")

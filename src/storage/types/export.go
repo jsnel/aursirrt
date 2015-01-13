@@ -209,6 +209,11 @@ func (e Export) GetTags() ([]Tag){
 	})
 	return <-c
 }
+
+
+func (e Export) GetTagNames() []string {
+	return e.tags
+}
 func (e Export) HasTags(tags []string) bool{
 	mytags := e.GetTags()
 	i:=0
