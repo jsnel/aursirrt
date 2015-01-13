@@ -30,19 +30,30 @@ func (p SendMessageProcessor) Process() {
 	case messages.DockedMessage:
 		msgtype = messages.DOCKED
 
+	case messages.AddExportMessage:
+		msgtype = messages.ADD_EXPORT
 	case messages.ExportAddedMessage:
 		msgtype = messages.EXPORT_ADDED
+	case messages.RemoveExportMessage:
+		msgtype = messages.REMOVE_EXPORT
 
+
+	case messages.AddImportMessage:
+		msgtype = messages.ADD_IMPORT
 
 	case messages.ImportAddedMessage:
 		msgtype = messages.IMPORT_ADDED
 
 	case messages.ImportUpdatedMessage:
 		msgtype = messages.IMPORT_UPDATED
+
+	case messages.RemoveImportMessage:
+		msgtype = messages.REMOVE_IMPORT
+
 	case *messages.Request:
 		msgtype = messages.REQUEST
 
-case messages.Result:
+	case messages.Result:
 		msgtype = messages.RESULT
 
 	}
@@ -66,5 +77,6 @@ func (p SendMessageProcessor) send(id string,conn connection.Connection,msgtype 
 		lp.AppId = id
 		p.SpawnProcess(lp)
 	}
+
 }
 

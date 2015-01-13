@@ -50,6 +50,24 @@ func (p ParseMessageProccesor) Process() {
 		np.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(np)
 
+	case messages.REMOVE_EXPORT:
+		var m messages.RemoveExportMessage
+		decoder.Decode(p.Msg, &m)
+		var np RemoveExportProcessor
+		np.AppId = p.AppId
+		np.RemoveExportMsg = m
+		np.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(np)
+
+	case messages.REMOVE_IMPORT:
+		var m messages.RemoveImportMessage
+		decoder.Decode(p.Msg, &m)
+		var np RemoveImportProcessor
+		np.AppId = p.AppId
+		np.RemoveImportMsg = m
+		np.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(np)
+
 	case messages.ADD_IMPORT:
 		var m messages.AddImportMessage
 		decoder.Decode(p.Msg, &m)

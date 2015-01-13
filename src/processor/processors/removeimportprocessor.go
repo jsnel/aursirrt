@@ -6,24 +6,21 @@ import (
 	"github.com/joernweissenborn/aursir4go/messages"
 )
 
-type UpdateExportProcessor struct {
+type RemoveImportProcessor struct {
 
 	*processor.GenericProcessor
 
 	AppId string
 
-	UpdateExportMsg messages.UpdateExportMessage
+	RemoveImportMsg messages.RemoveImportMessage
 
 }
 
-func (p UpdateExportProcessor) Process() {
-	printDebug("UPDATEEXPORT",p.UpdateExportMsg)
-	Export := types.GetExportById(p.UpdateExportMsg.ExportId,p.GetAgent())
-	Export.UpdateTags(p.UpdateExportMsg.Tags)
-	var pjp PendingJobProcessor
-	pjp.Appkey = Export.GetAppKey()
-	pjp .GenericProcessor = processor.GetGenericProcessor()
-	p.SpawnProcess(pjp)
+func (p RemoveImportProcessor) Process() {
+	printDebug("REMOVEEXPORT",p.RemoveImportMsg)
+	Import := types.GetImportById(p.RemoveImportMsg.ImportId,p.GetAgent())
+	isapp := !Import.GetApp().IsNode()
+	Import.Remove()
 	var uesp ExportedStateProcessor
 	uesp.AppKey = Export.GetAppKey()
 	uesp .GenericProcessor = processor.GetGenericProcessor()
@@ -31,12 +28,12 @@ func (p UpdateExportProcessor) Process() {
 	p.SpawnProcess(uesp)
 
 
-	if !Export.GetApp().IsNode() {
+	if isapp {
 		for _, node := range types.GetNodes(p.GetAgent()){
 			node.Lock()
 			var smp SendMessageProcessor
 			smp.App = node
-			smp.Msg = p.UpdateExportMsg
+			smp.Msg = p.RemoveImportMsg
 			smp.GenericProcessor = processor.GetGenericProcessor()
 			p.SpawnProcess(smp)
 			node.Unlock()
