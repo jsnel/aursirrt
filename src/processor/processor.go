@@ -1,7 +1,7 @@
 package processor
 
 import (
-	"storage"
+	"aursirrt/src/storage"
 )
 
 type Processor interface {

@@ -2,13 +2,13 @@ package boot
 
 import (
 	"log"
-	"processor"
-	"storage"
-	"dock"
-	"dock/dockzmq"
-	"cmdlineinterface"
+	"aursirrt/src/processor"
+	"aursirrt/src/storage"
+	"aursirrt/src/dock"
+	"aursirrt/src/dock/dockzmq"
+	"aursirrt/src/cmdlineinterface"
 	"flag"
-	"config"
+	"aursirrt/src/config"
 )
 
 const (

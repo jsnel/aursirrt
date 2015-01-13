@@ -2,9 +2,9 @@ package types
 
 import (
 	"log"
-	"storage"
+	"aursirrt/src/storage"
 	"github.com/joernweissenborn/aursir4go/messages"
-	"dock/connection"
+	"aursirrt/src/dock/connection"
 	"fmt"
 	"sync"
 )

@@ -1,7 +1,7 @@
 package types
 
 import (
-	"storage"
+	"aursirrt/src/storage"
 	"log"
 
 	"github.com/joernweissenborn/aursir4go/appkey"

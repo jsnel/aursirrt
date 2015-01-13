@@ -1,7 +1,7 @@
 package processors
 
 import (
-	"processor"
+	"aursirrt/src/processor"
 
 	"github.com/joernweissenborn/aursir4go/messages"
 )

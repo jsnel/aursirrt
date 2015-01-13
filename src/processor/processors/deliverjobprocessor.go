@@ -1,8 +1,8 @@
 package processors
 
 import (
-	"processor"
-	"storage/types"
+	"aursirrt/src/processor"
+	"aursirrt/src/storage/types"
 	"github.com/joernweissenborn/aursir4go/calltypes"
 )
 

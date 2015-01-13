@@ -1,14 +1,11 @@
 package dock
 
-import "log"
-
-import "dock/connection"
-
-import "processor/processors"
-
-import "processor"
 
 import (
+	"aursirrt/src/processor/processors"
+	"aursirrt/src/dock/connection"
+	"aursirrt/src/processor"
+	"log"
 )
 
 func NewAgent(c chan processor.Processor) DockAgent{

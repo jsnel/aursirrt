@@ -4,7 +4,7 @@ import (
 	"log"
 	zmq "github.com/pebbe/zmq4"
 	"strconv"
-	"dock"
+	"aursirrt/src/dock"
 	"github.com/joernweissenborn/aursir4go/messages"
 	"net"
 	"time"

@@ -1,11 +1,11 @@
 package processors
 
 import (
-	"processor"
-	"storage/types"
+	"aursirrt/src/processor"
+	"aursirrt/src/storage/types"
 	"github.com/joernweissenborn/aursir4go/messages"
 	"github.com/joernweissenborn/aursir4go/util"
-	"dock/connection"
+	"aursirrt/src/dock/connection"
 )
 
 type SendMessageProcessor struct {

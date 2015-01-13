@@ -1,8 +1,8 @@
 package processors
 
 import (
-	"processor"
-	"storage/types"
+	"aursirrt/src/processor"
+	"aursirrt/src/storage/types"
 
 	"github.com/joernweissenborn/aursir4go/messages"
 )
@@ -18,12 +18,15 @@ type ExportedStateProcessor struct {
 
 func (p ExportedStateProcessor) Process() {
 	for _, imp := range p.AppKey.GetImporter() {
+		app :=       imp.GetApp()
+		if !app.IsNode() {
 		var smp SendMessageProcessor
-		smp.App = imp.GetApp()
+		smp.App = app
 		printDebug(imp.HasExporter())
 		smp.Msg = messages.ImportUpdatedMessage{imp.GetId(),imp.HasExporter()}
 		smp.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(smp)
+		}
 	}
 }
 

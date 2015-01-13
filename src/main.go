@@ -1,7 +1,7 @@
 package main
 
 import (
-	"boot"
+	"aursirrt/src/boot"
 )
 
 func main() {
