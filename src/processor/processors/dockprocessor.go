@@ -39,7 +39,7 @@ func (p DockProcessor) Process() {
 		if ok {
 			app.Lock()
 			defer app.Unlock()
-			conn := app.GetConnection()
+			conn,_ := app.GetConnection()
 			err = conn.Init()
 			if err != nil {
 				return

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	MAX_PROCESSORS = 4
+	MAX_PROCESSORS = 1
 )
 
 func Boot(){
@@ -22,8 +22,12 @@ func Boot(){
 
 	a := bootStorage()
 	                   id:= a.GetId()
+	mprint("Nodeid is "+id)
+
 	p := bootCore(a)
 	var z dockzmq.DockerZmq
+	z.SetIp(*config.Zmqip)
+	z.SetP2P(*config.P2p)
 	z.SetPort(int64(*config.Zmqport))
 	bootDocker(p, z, id)
 
@@ -39,10 +43,13 @@ func BootWithoutCmdlineinterface(){
 	a := bootStorage()
 
 	id:= a.GetId()
+	mprint("Nodeid is "+id)
 	p := bootCore(a)
+
 	var z dockzmq.DockerZmq
 	z.SetPort(int64(*config.Zmqport))
-
+	z.SetIp(*config.Zmqip)
+	z.SetP2P(*config.P2p)
 	bootDocker(p, z, id)
 
 	//	var w dockwebsockets.DockerWebSockets

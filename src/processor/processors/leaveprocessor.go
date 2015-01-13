@@ -21,7 +21,14 @@ func (p LeaveProcessor) Process() {
 	for _, e:= range app.GetExports() {
 		keys = append(keys,e.GetAppKey())
 	}
+	conn,_ := app.GetConnection()
+	conn.Close()
+	printDebug("LEAVE locking")
+	app.Lock()
+	printDebug("LEAVE unlocking")
 
+	app.Unlock()
+	printDebug("LEAVE removing")
 	app.Remove()
 	for _, k:= range keys {
 	    if k.Exists() {

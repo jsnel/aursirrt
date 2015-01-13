@@ -39,7 +39,7 @@ func (p AddExportProcessor) Process() {
 	uesp.GenericProcessor = processor.GetGenericProcessor()
 	p.SpawnProcess(uesp)
 
-	if !app.IsNode() {
+	if app.IsNode() {
 		p.AddExportMsg.ExportId = Export.GetId()
 		for _, node := range types.GetNodes(p.GetAgent()){
 			node.Lock()

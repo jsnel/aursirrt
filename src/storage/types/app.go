@@ -88,29 +88,51 @@ func (app App) IsNode() bool {
 }
 
 
-func (app App) Lock() {
-	app.getProperties().Lock()
+func (app App) Lock() bool {
+	props, ok := app.getProperties()
+	if ok {
+		props.Lock()
+	}
+	return ok
 }
 
 func (app App) Unlock() {
-	app.getProperties().Unlock()
+	props, ok := app.getProperties()
+	if ok {
+		props.Unlock()
+	}
 }
 
-func (app App) GetConnection() connection.Connection {
+func (app App) GetConnection() (connection.Connection, bool) {
 
-	props := app.getProperties()
-	return props.connection
+	props, ok := app.getProperties()
+	return props.connection,ok
 }
 
-func (app App) getProperties() appproperties {
+func (app App) getProperties() (appproperties,bool) {
 
 	c := make(chan appproperties)
 	defer close(c)
+	fail := make(chan struct{})
+	defer close(fail)
 	app.agent.Read(func (sc *storage.StorageCore){
-		c <- sc.GetVertex(app.Id).Properties.(appproperties)
+		av := sc.GetVertex(app.Id)
+		if av != nil {
+			c <- av.Properties.(appproperties)
+		} else {
+			fail <- struct{}{}
+		}
 	})
 
-	return <- c
+	select {
+	case aprops,_ := <-c:
+		return aprops, true
+
+	case <-fail:
+		return appproperties{},false
+
+	}
+
 }
 
 func (app App) Create(DockMessage messages.DockMessage, Connection connection.Connection) bool{

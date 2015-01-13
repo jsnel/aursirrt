@@ -18,14 +18,18 @@ type ExportedStateProcessor struct {
 
 func (p ExportedStateProcessor) Process() {
 	for _, imp := range p.AppKey.GetImporter() {
-		app :=       imp.GetApp()
-		if !app.IsNode() {
-		var smp SendMessageProcessor
-		smp.App = app
-		printDebug(imp.HasExporter())
-		smp.Msg = messages.ImportUpdatedMessage{imp.GetId(),imp.HasExporter()}
-		smp.GenericProcessor = processor.GetGenericProcessor()
-		p.SpawnProcess(smp)
+		app := imp.GetApp()
+		ok := app.Lock()
+		if ok {
+			if !app.IsNode() {
+				var smp SendMessageProcessor
+				smp.App = app
+				printDebug(imp.HasExporter())
+				smp.Msg = messages.ImportUpdatedMessage{imp.GetId(),imp.HasExporter()}
+				smp.GenericProcessor = processor.GetGenericProcessor()
+				p.SpawnProcess(smp)
+			}
+		app.Unlock()
 		}
 	}
 }
