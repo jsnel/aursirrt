@@ -22,7 +22,7 @@ func (p RemoveImportProcessor) Process() {
 	isapp := !Import.GetApp().IsNode()
 	Import.Remove()
 	var uesp ExportedStateProcessor
-	uesp.AppKey = Export.GetAppKey()
+	uesp.AppKey = Import.GetAppKey()
 	uesp .GenericProcessor = processor.GetGenericProcessor()
 
 	p.SpawnProcess(uesp)

@@ -23,17 +23,17 @@ func (p UpdateImportProcessor) Process() {
 	Import := types.GetImportById(p.UpdateImportMsg.ImportId,p.GetAgent())
 	Import.UpdateTags(p.UpdateImportMsg.Tags)
 
-	p.SpawnProcess(smp)
 	if !Import.GetApp().IsNode() {
 		var smp SendMessageProcessor
 		smp.App = Import.GetApp()
 		smp.Msg = messages.ImportUpdatedMessage{Import.GetId(),Import.HasExporter()}
 		smp.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(smp)
 		for _, node := range types.GetNodes(p.GetAgent()){
 			node.Lock()
 			var smp SendMessageProcessor
 			smp.App = node
-			smp.Msg = p.UpdateExportMsg
+			smp.Msg = p.UpdateImportMsg
 			smp.GenericProcessor = processor.GetGenericProcessor()
 			p.SpawnProcess(smp)
 			node.Unlock()
