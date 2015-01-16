@@ -59,6 +59,7 @@ func (a AppKey) GetId() string {
 }
 func (a AppKey) GetExporter() (exporter []Export) {
 	exporter = []Export{}
+	exporterids := []string{}
 	c := make(chan string,1)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
@@ -71,12 +72,16 @@ func (a AppKey) GetExporter() (exporter []Export) {
 		close(c)
 	})
 	for eid := range c {
+		exporterids = append(exporterids,eid)
+	}
+	for _, eid := range exporterids {
 		exporter = append(exporter,GetExportById(eid,a.agent))
 	}
 	return
 }
 func (a AppKey) GetImporter() (importer []Import) {
 	importer = []Import{}
+	importerids := []string{}
 	c := make(chan string,1)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
@@ -88,14 +93,18 @@ func (a AppKey) GetImporter() (importer []Import) {
 
 		close(c)
 	})
-	for eid := range c {
-		importer = append(importer,GetImportById(eid,a.agent))
+	for iid := range c {
+		importerids = append(importerids,iid)
+	}
+	for _,iid := range importerids {
+		importer = append(importer,GetImportById(iid,a.agent))
 	}
 	return
 }
 
 func (a AppKey) GetListener(function string,export Export) (importer []Import) {
 	importer = []Import{}
+	importerids := []string{}
 	c := make(chan string,1)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
@@ -109,8 +118,11 @@ func (a AppKey) GetListener(function string,export Export) (importer []Import) {
 
 		close(c)
 	})
-	for eid := range c {
-		imp := GetImportById(eid,a.agent)
+	for iid := range c {
+		importerids = append(importerids,iid)
+	}
+	for _, iid := range importerids {
+		imp := GetImportById(iid,a.agent)
 		if export.HasTags(imp.GetTagNames()) {
 			importer = append(importer,imp)
 		}

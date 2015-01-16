@@ -9,10 +9,11 @@ import (
 	"aursirrt/src/cmdlineinterface"
 	"flag"
 	"aursirrt/src/config"
+	"net"
 )
 
 const (
-	MAX_PROCESSORS = 1
+	MAX_PROCESSORS = 8
 )
 
 func Boot(){
@@ -25,11 +26,16 @@ func Boot(){
 	mprint("Nodeid is "+id)
 
 	p := bootCore(a)
-	var z dockzmq.DockerZmq
-	z.SetIp(*config.Zmqip)
-	z.SetP2P(*config.P2p)
-	z.SetPort(int64(*config.Zmqport))
-	bootDocker(p, z, id)
+	if *config.P2p {
+		var nz dockzmq.DockerZmq
+		nz.SetIp(*config.Zmqip)
+		nz.SetP2P(true)
+		nz.SetPort(getRandomPort())
+		bootDocker(p, nz, id)
+	}
+	var lz dockzmq.DockerZmq
+	lz.SetPort(int64(*config.Zmqport))
+	bootDocker(p, lz, id)
 
 //	var w dockwebsockets.DockerWebSockets
 //	bootDocker(p,w)
@@ -94,4 +100,14 @@ func mprint(msg string){
 
 	log.Println("BOOT",msg)
 
+}
+
+
+func getRandomPort() int64 {
+	l, err := net.Listen("tcp", "127.0.0.1:0") // listen on localhost
+	if err != nil {
+		panic("Could not find a free port")
+	}
+	defer l.Close()
+	return int64(l.Addr().(*net.TCPAddr).Port)
 }

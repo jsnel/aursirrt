@@ -40,9 +40,8 @@ func (dzmq DockerZmq) Launch(agent dock.DockAgent, id string) (err error) {
 	dzmq.skt.Bind("tcp://*:"+strconv.FormatInt(dzmq.homeport,10))
 
 	go dzmq.listen()
-	if dzmq.p2p {
-		dzmq.launchUdp()
-	}
+	dzmq.launchUdp()
+
 	return
 }
 
@@ -66,8 +65,9 @@ func (dzmq *DockerZmq) listen() {
 	for {
 
 		msg, _ := dzmq.skt.RecvMessage(0)
+		log.Println("ZMQAppDocker got message from", msg)
 
-		if len(msg) > 5 {
+		if len(msg) > 4 {
 
 			senderId := msg[0]
 
@@ -81,8 +81,8 @@ func (dzmq *DockerZmq) listen() {
 				case messages.DOCK:
 					encmsg := []byte(msg[3])
 					IP := "localhost"
-					if len(msg) > 6{
-					 IP = msg[5]
+					if len(msg) > 5{
+						IP = msg[5]
 					}
 					printDebug(IP)
 					port, err := strconv.ParseInt(msg[4], 10, 64)
@@ -105,34 +105,45 @@ func (dzmq *DockerZmq)launchUdp() {
 
 	go dzmq.updPingListener()
 	go dzmq.checkAppLiveliness()
-	kill := make(chan struct {})
-	go pingUdp(dzmq.id, dzmq.ip, dzmq.homeport,kill)
-
+	if dzmq.p2p {
+		kill := make(chan struct {})
+		go pingUdp(dzmq.id, dzmq.ip, dzmq.homeport, kill)
+	}
 }
 func (dzmq *DockerZmq)updPingListener() {
 	var buf [1024]byte
 
+	var sock *net.UDPConn
+	if dzmq.p2p {
+		ifaceaddresses,_ := net.InterfaceAddrs()
+		var Interface net.Interface
+		for i,iface := range ifaceaddresses {
 
-
-	ifaceaddresses,_ := net.InterfaceAddrs()
-	var Interface net.Interface
-	for i,iface := range ifaceaddresses {
-
-		addr := strings.Split(iface.String(),"/")[0]
-		mprint(fmt.Sprint("found networkinterface ",addr))
-		if addr == dzmq.ip {
-			ifaces,_ := net.Interfaces()
-			Interface = ifaces[i]
+			addr := strings.Split(iface.String(),"/")[0]
+			mprint(fmt.Sprint("found networkinterface ",addr))
+			if addr == dzmq.ip {
+				ifaces,_ := net.Interfaces()
+				Interface = ifaces[i]
+			}
 		}
-	}
+		mcip, err := net.ResolveUDPAddr("udp", "224.0.0.251:5556")
+		sock, err = net.ListenMulticastUDP("udp4", &Interface, mcip)
+		if err != nil {
+			log.Fatal("DOCKERZMQ",err)
+		}
+		log.Println("DOCKERZMQ", "Startet to listen for multicast UDP ping on port 5556")
 
-	mcip, err := net.ResolveUDPAddr("udp", "224.0.0.251:5556")
-
-	sock, err := net.ListenMulticastUDP("udp4", &Interface, mcip)
-	if err != nil {
-		log.Fatal("DOCKERZMQ",err)
+	} else {
+		addr, err := net.ResolveUDPAddr("udp", ":5557")
+		if err != nil {
+			log.Fatal("DOCKERZMQ",err)
+		}
+		sock, err = net.ListenUDP("udp", addr)
+		if err != nil {
+			log.Fatal("DOCKERZMQ",err)
+		}
+		log.Println("DOCKERZMQ", "Startet to listen for UDP ping on port 5557")
 	}
-	log.Println("DOCKERZMQ", "Startet to listen for UDP ping on port 5556")
 	for {
 		rlen, Ip, err := sock.ReadFromUDP(buf[:])
 		if err != nil {
@@ -157,7 +168,7 @@ func (dzmq *DockerZmq) addAppPing(AppId string) {
 func (dzmq *DockerZmq) checkInAppPing(AppId string, ip string, Port string) {
 	if _,f:= dzmq.appLastPing[AppId];f {
 		dzmq.appLastPing[AppId] = time.Now()
-	} else if AppId!= dzmq.id && Port != ""{
+	} else if dzmq.p2p && AppId!= dzmq.id && Port != ""{
 		port,_ := strconv.ParseInt(Port,10,64)
 		conn := NewConnection( dzmq.homeport, port, dzmq.ip, ip, dzmq.id)
 		err := conn.Init()
@@ -176,10 +187,10 @@ func (dzmq *DockerZmq) removeAppPing(AppId string) {
 
 func (dzmq *DockerZmq) checkAppLiveliness() {
 
-	t := time.NewTimer(10 * time.Second)
+	t := time.NewTimer(3 * time.Second)
 	for _ = range t.C {
 		for id, lastCheckIn := range dzmq.appLastPing {
-			if time.Since(lastCheckIn) > 10*time.Second {
+			if time.Since(lastCheckIn) > 3*time.Second {
 				mprint("Apptimeout: "+id)
 				dzmq.closeConnection(id)
 			}
@@ -198,7 +209,7 @@ func (dzmq *DockerZmq) closeConnection(id string){
 
 func pingUdp(UUID, ip string, port int64, kill chan struct {}) {
 
-	var pingtime = 8 * time.Second
+	var pingtime = 1 * time.Second
 
 	localAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:0",ip))
 	if err != nil {
@@ -214,7 +225,7 @@ func pingUdp(UUID, ip string, port int64, kill chan struct {}) {
 		log.Fatal("DOCKERZMQ", err)
 	}
 	t := time.NewTimer(pingtime)
-	mprint(fmt.Sprintf("Beginning UDP Broadcast on %s:%d",ip,port))
+	mprint(fmt.Sprintf("Beginning UDP Broadcast with %s:%d",ip,port))
 	for {
 		select {
 		case <-kill:

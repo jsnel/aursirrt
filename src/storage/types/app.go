@@ -36,7 +36,11 @@ func GetNodes(agent storage.StorageAgent) []App {
 		close(c)
 	})
 	nodes := []App{}
+	nodeids := []string{}
 	for nodeid := range c {
+		nodeids = append(nodeids,nodeid)
+	}
+	for _,nodeid := range nodeids {
 		nodes = append(nodes,GetApp(nodeid,agent))
 	}
 	return nodes
@@ -54,7 +58,11 @@ func GetApps(agent storage.StorageAgent) []App {
 		close(c)
 	})
 	apps := []App{}
+	appids := []string{}
 	for appid := range c {
+		appids = append(appids,appid)
+	}
+	for _, appid := range appids {
 		apps = append(apps,GetApp(appid,agent))
 	}
 	return apps
@@ -160,6 +168,7 @@ func (app App) Create(DockMessage messages.DockMessage, Connection connection.Co
 }
 
 func (app App) GetExports() (exports []Export){
+	exportids := []string{}
 	exports = []Export{}
 	c := make(chan string)
 
@@ -173,12 +182,19 @@ func (app App) GetExports() (exports []Export){
 		close(c)
 	})
 	for id := range c {
+		exportids = append(exportids, id)
+	}
+
+	for _, id := range exportids {
 		exports = append(exports, GetExportById(id,app.agent))
 	}
+
+
 	return
 }
 
 func (app App) GetImports() (imports []Import){
+	importids := []string{}
 	imports = []Import{}
 	c := make(chan string)
 
@@ -192,6 +208,9 @@ func (app App) GetImports() (imports []Import){
 		close(c)
 	})
 	for id := range c {
+		importids = append(importids, id)
+	}
+	for _,id := range importids {
 		imports = append(imports, GetImportById(id,app.agent))
 	}
 	return

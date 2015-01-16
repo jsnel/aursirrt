@@ -260,6 +260,7 @@ func (i Import) HasExporter() (bool){
 }
 func (i Import) GetJobs() (jobs []Job){
 	jobs = []Job{}
+	jobids := []string{}
 	c := make(chan string)
 	i.agent.Read(func (sc *storage.StorageCore){
 		ev := sc.GetVertex(i.id)
@@ -273,6 +274,9 @@ func (i Import) GetJobs() (jobs []Job){
 	})
 
 	for jid := range c {
+		jobids = append(jobids, jid)
+	}
+		for _, jid := range jobids {
 		jobs = append(jobs, GetJobById(jid,i.agent))
 	}
 	return

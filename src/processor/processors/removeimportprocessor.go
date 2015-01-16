@@ -17,7 +17,7 @@ type RemoveImportProcessor struct {
 }
 
 func (p RemoveImportProcessor) Process() {
-	printDebug("REMOVEEXPORT",p.RemoveImportMsg)
+	printDebug("REMOVEIMPORT",p.RemoveImportMsg)
 	Import := types.GetImportById(p.RemoveImportMsg.ImportId,p.GetAgent())
 	isapp := !Import.GetApp().IsNode()
 	Import.Remove()

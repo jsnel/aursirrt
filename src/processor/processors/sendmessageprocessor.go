@@ -6,6 +6,7 @@ import (
 	"github.com/joernweissenborn/aursir4go/messages"
 	"github.com/joernweissenborn/aursir4go/util"
 	"aursirrt/src/dock/connection"
+	"fmt"
 )
 
 type SendMessageProcessor struct {
@@ -18,7 +19,7 @@ type SendMessageProcessor struct {
 }
 
 func (p SendMessageProcessor) Process() {
-	//printDebug(fmt.Sprint("sendmsg",p.Msg) )
+	printDebug(fmt.Sprint("sendmsg",p.Msg) )
 	conn, ok := p.App.GetConnection()
 	id := p.App.Id
 	if ok {
@@ -73,11 +74,15 @@ func (p SendMessageProcessor) Process() {
 }
 
 func (p SendMessageProcessor) send(id string,conn connection.Connection,msgtype int64, codec string,msg []byte) {
-
-	if nil != conn.Send(msgtype,codec,msg) {
+	err := conn.Send(msgtype,codec,msg)
+	if nil != err {
 		var lp LeaveProcessor
 		lp.AppId = id
+		lp.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(lp)
+	} else {
+		printDebug(fmt.Sprint("msg send"))
+
 	}
 
 }
