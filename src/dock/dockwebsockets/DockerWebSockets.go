@@ -5,7 +5,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"net/http"
 	"strconv"
-	"dock"
+	"aursirrt/src/dock"
 	"fmt"
 	"github.com/joernweissenborn/aursir4go/messages"
 )
@@ -16,7 +16,7 @@ type DockerWebSockets struct {
 
 }
 
-func (dws DockerWebSockets)	Launch(agent dock.DockAgent)(err error){
+func (dws DockerWebSockets)	Launch(agent dock.DockAgent, id string)(err error){
 
 	mprint("Launching")
 
@@ -49,8 +49,14 @@ func (dws DockerWebSockets) listen(ws *websocket.Conn){
 	printDebug(fmt.Sprintf("DockerWebsockets starting listening to:",ws.RemoteAddr()))
 
 	for {
+		sndId, err :=receiveMsg(ws)
+		senderId := string(sndId)
+		if err != nil {
+			dws.remove(senderId)
+			return
+		}
 		msgtype, err := receiveMsg(ws)
-		senderId :=ws.RemoteAddr().String()
+
 		if err != nil {
 			dws.remove(senderId)
 			return
@@ -66,10 +72,9 @@ func (dws DockerWebSockets) listen(ws *websocket.Conn){
 			return
 		}
 		msgType, err := strconv.ParseInt(string(msgtype),10,64)
-
-
+		
 		if err != nil {
-			printDebug(fmt.Sprintf("DockerWebsockets got invalid Message on client:", ws.RemoteAddr()))
+			printDebug(fmt.Sprint("DockerWebsockets got invalid Message on client:", ws.RemoteAddr(),err))
 			return
 		}
 		if  msgType==messages.DOCK{

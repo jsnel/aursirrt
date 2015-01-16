@@ -25,7 +25,7 @@ func (p AddExportProcessor) Process() {
 	if !app.IsNode() {
 		var smp SendMessageProcessor
 		smp.App = app
-		smp.Msg = messages.ExportAddedMessage{Export.GetId()}
+		smp.Msg = messages.ExportAddedMessage{Export.GetId(),p.AddExportMsg.AppKey,p.AddExportMsg.Tags}
 		smp.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(smp)
 	}
@@ -39,7 +39,7 @@ func (p AddExportProcessor) Process() {
 	uesp.GenericProcessor = processor.GetGenericProcessor()
 	p.SpawnProcess(uesp)
 
-	if app.IsNode() {
+	if !app.IsNode() {
 		p.AddExportMsg.ExportId = Export.GetId()
 		for _, node := range types.GetNodes(p.GetAgent()){
 			node.Lock()

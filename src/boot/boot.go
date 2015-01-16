@@ -6,6 +6,7 @@ import (
 	"aursirrt/src/storage"
 	"aursirrt/src/dock"
 	"aursirrt/src/dock/dockzmq"
+	"aursirrt/src/dock/dockwebsockets"
 	"aursirrt/src/cmdlineinterface"
 	"flag"
 	"aursirrt/src/config"
@@ -37,8 +38,8 @@ func Boot(){
 	lz.SetPort(int64(*config.Zmqport))
 	bootDocker(p, lz, id)
 
-//	var w dockwebsockets.DockerWebSockets
-//	bootDocker(p,w)
+	var w dockwebsockets.DockerWebSockets
+	bootDocker(p,w,id)
 
 	bootCmdlineinterface(p)
 }

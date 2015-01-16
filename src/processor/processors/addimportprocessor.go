@@ -24,7 +24,7 @@ func (p AddImportProcessor) Process() {
 	if !app.IsNode() {
 		var smp SendMessageProcessor
 		smp.App = app
-		smp.Msg = messages.ImportAddedMessage{Import.GetId(),Import.HasExporter()}
+		smp.Msg = messages.ImportAddedMessage{Import.GetId(),Import.HasExporter(), p.AddImportMsg.AppKey,p.AddImportMsg.Tags}
 		smp.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(smp)
 		p.AddImportMsg.ImportId = Import.GetId()
