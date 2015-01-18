@@ -1,8 +1,26 @@
 package config
 
-import "flag"
+import (
+	"flag"
+	"fmt"
+)
 
 
-var Zmqport = flag.Int("zport", 5555, "Set custom port for zeromq backend")
-var Zmqip = flag.String("zip", "localhost", "Set custom ip for zeromq backend")
-var P2p = flag.Bool("p2p", false, "Set to enable runtime p2p connection.")
+type connections []string
+
+func (i *connections) String() string {
+	return fmt.Sprintf("%d", *i)
+}
+
+func (i *connections) Set(value string) error {
+	*i = append(*i, value )
+	return nil
+}
+
+var Zconnections connections
+
+func init(){
+	flag.Var(&Zconnections, "zconnection", "e.g. 192.168.0.1:5555, if no port specified p2p will be enabled on the iface")
+
+}
+

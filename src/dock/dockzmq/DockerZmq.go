@@ -6,10 +6,8 @@ import (
 	"strconv"
 	"aursirrt/src/dock"
 	"github.com/joernweissenborn/aursir4go/messages"
-	"net"
 	"time"
 	"encoding/json"
-	"strings"
 	"fmt"
 )
 
@@ -17,16 +15,16 @@ type DockerZmq struct {
 	agent dock.DockAgent
 	skt *zmq.Socket
 	id string
-	ip string
 	appLastPing map[string]time.Time
-	homeport int64
-	p2p bool
-	killPing chan struct {}
+	interfaceip string
+	incomingport int64
+	broadcast bool
+	udpport int64
 }
 
 func (dzmq DockerZmq) Launch(agent dock.DockAgent, id string) (err error) {
-
-	mprint(fmt.Sprint("Launching on port",dzmq.homeport))
+	    zsocket := fmt.Sprintf("tcp://%s:%d",dzmq.interfaceip,dzmq.incomingport)
+	mprint(fmt.Sprint("Launching on ",zsocket))
 	dzmq.agent = agent
 	dzmq.id = id
 	dzmq.appLastPing = map[string]time.Time{}
@@ -37,26 +35,33 @@ func (dzmq DockerZmq) Launch(agent dock.DockAgent, id string) (err error) {
 		return
 	}
 
-	dzmq.skt.Bind("tcp://*:"+strconv.FormatInt(dzmq.homeport,10))
-
+	dzmq.skt.Bind(zsocket)
+	if err != nil {
+		return
+	}
 	go dzmq.listen()
 	dzmq.launchUdp()
 
 	return
 }
 
-func (dzmq *DockerZmq) SetP2P(p2p bool){
-	mprint(fmt.Sprint("P2P active: "))
-	dzmq.p2p = p2p
+func (dzmq *DockerZmq) SetBroadcast(bcast bool){
+	mprint(fmt.Sprint("P2P active: ",bcast))
+	dzmq.broadcast = bcast
 }
-func (dzmq *DockerZmq) SetPort(homeport int64){
-	mprint(fmt.Sprint("Incoming port is: ",homeport))
-	dzmq.homeport = homeport
+func (dzmq *DockerZmq) SetUDPPort(udpport int64){
+	mprint(fmt.Sprint("udpport port is: ",udpport))
+	dzmq.udpport = udpport
+}
+func (dzmq *DockerZmq) SetIncomingPort(incomingport int64){
+	mprint(fmt.Sprint("Incoming port is: ",incomingport))
+	dzmq.incomingport = incomingport
 }
 func (dzmq *DockerZmq) SetIp(ip string){
 	mprint(fmt.Sprint("Broadcastinterfaceadress is: ",ip))
-	dzmq.ip = ip
+	dzmq.interfaceip = ip
 }
+
 
 func (dzmq *DockerZmq) listen() {
 
@@ -87,7 +92,7 @@ func (dzmq *DockerZmq) listen() {
 					printDebug(IP)
 					port, err := strconv.ParseInt(msg[4], 10, 64)
 					if err == nil {
-						conn := NewConnection(dzmq.homeport, port, dzmq.ip,IP, dzmq.id)
+						conn := NewConnection(dzmq.incomingport, port, dzmq.interfaceip,IP, dzmq.id)
 						dzmq.addAppPing(senderId)
 						dzmq.agent.InitDocking(senderId, codec, encmsg, &conn)
 					}
@@ -101,64 +106,15 @@ func (dzmq *DockerZmq) listen() {
 	}
 }
 
-func (dzmq *DockerZmq)launchUdp() {
 
-	go dzmq.updPingListener()
+func (dzmq *DockerZmq)launchUdp() (err error) {
+	b := createBeacon(dzmq.broadcast,dzmq.id,dzmq.udpport,dzmq.incomingport,dzmq.interfaceip,dzmq)
+	err = b.launch()
+	if err != nil {
+		return
+	}
 	go dzmq.checkAppLiveliness()
-	if dzmq.p2p {
-		kill := make(chan struct {})
-		go pingUdp(dzmq.id, dzmq.ip, dzmq.homeport, kill)
-	}
-}
-func (dzmq *DockerZmq)updPingListener() {
-	var buf [1024]byte
-
-	var sock *net.UDPConn
-	if dzmq.p2p {
-		ifaceaddresses,_ := net.InterfaceAddrs()
-		var Interface net.Interface
-		for i,iface := range ifaceaddresses {
-
-			addr := strings.Split(iface.String(),"/")[0]
-			mprint(fmt.Sprint("found networkinterface ",addr))
-			if addr == dzmq.ip {
-				ifaces,_ := net.Interfaces()
-				Interface = ifaces[i]
-			}
-		}
-		mcip, err := net.ResolveUDPAddr("udp", "224.0.0.251:5556")
-		sock, err = net.ListenMulticastUDP("udp4", &Interface, mcip)
-		if err != nil {
-			log.Fatal("DOCKERZMQ",err)
-		}
-		log.Println("DOCKERZMQ", "Startet to listen for multicast UDP ping on port 5556")
-
-	} else {
-		addr, err := net.ResolveUDPAddr("udp", ":5557")
-		if err != nil {
-			log.Fatal("DOCKERZMQ",err)
-		}
-		sock, err = net.ListenUDP("udp", addr)
-		if err != nil {
-			log.Fatal("DOCKERZMQ",err)
-		}
-		log.Println("DOCKERZMQ", "Startet to listen for UDP ping on port 5557")
-	}
-	for {
-		rlen, Ip, err := sock.ReadFromUDP(buf[:])
-		if err != nil {
-			log.Fatal("DOCKERZMQ",err)
-		}
-		beaconstring := strings.Split(string(buf[:rlen]),":")
-		appid := beaconstring[0]
-		port := ""
-		if len(beaconstring) >1{
-			port = beaconstring[1]
-		}
-		ip := strings.Split(Ip.String(),":")[0]
-
-		go dzmq.checkInAppPing(appid, ip,port)
-	}
+	return
 }
 
 func (dzmq *DockerZmq) addAppPing(AppId string) {
@@ -168,9 +124,9 @@ func (dzmq *DockerZmq) addAppPing(AppId string) {
 func (dzmq *DockerZmq) checkInAppPing(AppId string, ip string, Port string) {
 	if _,f:= dzmq.appLastPing[AppId];f {
 		dzmq.appLastPing[AppId] = time.Now()
-	} else if dzmq.p2p && AppId!= dzmq.id && Port != ""{
+	} else if dzmq.broadcast && AppId!= dzmq.id && Port != ""{
 		port,_ := strconv.ParseInt(Port,10,64)
-		conn := NewConnection( dzmq.homeport, port, dzmq.ip, ip, dzmq.id)
+		conn := NewConnection( dzmq.incomingport, port, dzmq.interfaceip, ip, dzmq.id)
 		err := conn.Init()
 		if err != nil {
 			return
@@ -207,38 +163,6 @@ func (dzmq *DockerZmq) closeConnection(id string){
 
 
 
-func pingUdp(UUID, ip string, port int64, kill chan struct {}) {
-
-	var pingtime = 1 * time.Second
-
-	localAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:0",ip))
-	if err != nil {
-		log.Fatal("DOCKERZMQ", err)
-	}
-	serverAddr, err := net.ResolveUDPAddr("udp", "224.0.0.251:5556")
-
-	if err != nil {
-		log.Fatal("DOCKERZMQ", err)
-	}
-	con, err := net.DialUDP("udp", localAddr, serverAddr)
-	if err != nil {
-		log.Fatal("DOCKERZMQ", err)
-	}
-	t := time.NewTimer(pingtime)
-	mprint(fmt.Sprintf("Beginning UDP Broadcast with %s:%d",ip,port))
-	for {
-		select {
-		case <-kill:
-			mprint("Stopping UDP")
-			return
-
-		case <-t.C:
-			con.Write([]byte(fmt.Sprintf("%s:%d", UUID, port)))
-			t.Reset(pingtime)
-		}
-	}
-
-}
 
 func mprint(msg string){
 	log.Println("DOCKERZMQ", msg)

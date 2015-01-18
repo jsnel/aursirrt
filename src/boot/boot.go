@@ -11,6 +11,8 @@ import (
 	"flag"
 	"aursirrt/src/config"
 	"net"
+	"strings"
+	"strconv"
 )
 
 const (
@@ -19,48 +21,49 @@ const (
 
 func Boot(){
 
+
+	bootCmdlineinterface(bootFunctionalCore())
+}
+
+func bootFunctionalCore() chan processor.Processor{
 	mprint("AurSir RT starting")
 	flag.Parse()
 
+	//Boot the storage core
+
 	a := bootStorage()
-	                   id:= a.GetId()
+
+	//get id
+	id:= a.GetId()
 	mprint("Nodeid is "+id)
 
+	//Boot the processing core
 	p := bootCore(a)
-	if *config.P2p {
-		var nz dockzmq.DockerZmq
-		nz.SetIp(*config.Zmqip)
-		nz.SetP2P(true)
-		nz.SetPort(getRandomPort())
-		bootDocker(p, nz, id)
+
+
+
+	//if *config.Broadcast {
+
+	//}
+	bootZeromqDocker(p,id,"127.0.0.1",5555,5557,false)
+
+	for _,conn :=range (config.Zconnections) {
+		split := strings.Split(conn, ":")
+		if len(split) == 1 {
+			bootZeromqDocker(p,id,conn,getRandomPort(),5556,true)
+		} else {
+			port, _ := strconv.ParseInt(split[1],10,64)
+			bootZeromqDocker(p,id,split[0],port,5557,false)
+		}
 	}
-	var lz dockzmq.DockerZmq
-	lz.SetPort(int64(*config.Zmqport))
-	bootDocker(p, lz, id)
 
 	var w dockwebsockets.DockerWebSockets
 	bootDocker(p,w,id)
+	return p
 
-	bootCmdlineinterface(p)
 }
 func BootWithoutCmdlineinterface(){
-
-	mprint("AurSir RT starting")
-	flag.Parse()
-	a := bootStorage()
-
-	id:= a.GetId()
-	mprint("Nodeid is "+id)
-	p := bootCore(a)
-
-	var z dockzmq.DockerZmq
-	z.SetPort(int64(*config.Zmqport))
-	z.SetIp(*config.Zmqip)
-	z.SetP2P(*config.P2p)
-	bootDocker(p, z, id)
-
-	//	var w dockwebsockets.DockerWebSockets
-//	bootDocker(p,w)
+	bootFunctionalCore()
 }
 
 func bootStorage() storage.StorageAgent {
@@ -68,6 +71,17 @@ func bootStorage() storage.StorageAgent {
 
 	return storage.NewAgent()
 }
+
+func bootZeromqDocker(p chan processor.Processor, id, ip string,port int64,udpport int64, broadcast bool)  {
+	mprint("Launching Docker")
+	var nz dockzmq.DockerZmq
+	nz.SetIp(ip)
+	nz.SetBroadcast(broadcast)
+	nz.SetIncomingPort(port)
+	nz.SetUDPPort(udpport)
+	bootDocker(p, nz, id)
+}
+
 
 
 func bootCore(a storage.StorageAgent) (processingChan chan processor.Processor){
@@ -84,8 +98,10 @@ func bootCore(a storage.StorageAgent) (processingChan chan processor.Processor){
 func bootDocker(p chan processor.Processor, d dock.Docker, id string) {
 	mprint("Launching Dock")
 	agent := dock.NewAgent(p)
-	d.Launch(agent,id)
-
+	err := d.Launch(agent,id)
+	if err != nil {
+		log.Fatal("BOOT", err)
+	}
 }
 
 
