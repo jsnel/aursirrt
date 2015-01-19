@@ -42,13 +42,11 @@ func (p AddExportProcessor) Process() {
 	if !app.IsNode() {
 		p.AddExportMsg.ExportId = Export.GetId()
 		for _, node := range types.GetNodes(p.GetAgent()){
-			node.Lock()
 			var smp SendMessageProcessor
 			smp.App = node
 			smp.Msg = p.AddExportMsg
 			smp.GenericProcessor = processor.GetGenericProcessor()
 			p.SpawnProcess(smp)
-			node.Unlock()
 		}
 	}
 }

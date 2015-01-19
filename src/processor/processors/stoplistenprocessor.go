@@ -6,30 +6,30 @@ import (
 	"github.com/joernweissenborn/aursir4go/messages"
 )
 
-type StartListenProcessor struct {
+type StopListenProcessor struct {
 
 	*processor.GenericProcessor
 
 	AppId string
 
-	StartListenMsg messages.ListenMessage
+	StopListenMsg messages.StopListenMessage
 
 }
 
-func (p StartListenProcessor) Process() {
+func (p StopListenProcessor) Process() {
 
-	Import := types.GetImportById(p.StartListenMsg.ImportId,p.GetAgent())
+	Import := types.GetImportById(p.StopListenMsg.ImportId,p.GetAgent())
 
-	Import.StartListenToFunction(p.StartListenMsg.FunctionName)
+	Import.StopListenToFunction(p.StopListenMsg.FunctionName)
 	
 	if !Import.GetApp().IsNode(){
 		for _,n := range types.GetNodes(p.GetAgent()){
 				var smp SendMessageProcessor
 				smp.App = n
-				smp.Msg = p.StartListenMsg
+				smp.Msg = p.StopListenMsg
 				smp.GenericProcessor = processor.GetGenericProcessor()
 				p.SpawnProcess(smp)
-
+			
 			
 		}		
 		

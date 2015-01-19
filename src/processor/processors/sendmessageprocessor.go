@@ -58,6 +58,12 @@ func (p SendMessageProcessor) Process() {
 		case messages.Result:
 			msgtype = messages.RESULT
 
+		case messages.ListenMessage:
+			msgtype = messages.LISTEN
+
+		case messages.StopListenMessage:
+			msgtype = messages.STOP_LISTEN
+
 		}
 
 		decoder := util.GetCodec(codec)

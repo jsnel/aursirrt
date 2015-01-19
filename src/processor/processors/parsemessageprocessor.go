@@ -93,6 +93,14 @@ case messages.LISTEN:
 		np.StartListenMsg = m
 		np.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(np)
+case messages.STOP_LISTEN:
+		var m messages.StopListenMessage
+		decoder.Decode(p.Msg, &m)
+		var np StopListenProcessor
+		np.AppId = p.AppId
+		np.StopListenMsg = m
+		np.GenericProcessor = processor.GetGenericProcessor()
+		p.SpawnProcess(np)
 
 	case messages.REQUEST:
 		var m messages.Request
