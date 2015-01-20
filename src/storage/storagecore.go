@@ -12,7 +12,7 @@ type StorageFunc func(storageCore *StorageCore)
 
 type StorageCore struct {
 	*propertygraph2go.InMemoryGraph
-	Root *propertygraph2go.Vertex
+	Root propertygraph2go.Vertex
 }
 
 func (sc *StorageCore) ExecuteFunc(storFunc StorageFunc){
@@ -20,7 +20,7 @@ func (sc *StorageCore) ExecuteFunc(storFunc StorageFunc){
 }
 
 func (sc *StorageCore) Run(storageWriteChan,storageReadChan chan StorageFunc){
-	sc.InMemoryGraph = propertygraph2go.New()
+	sc.InMemoryGraph = propertygraph2go.NewInMemoryGraph()
 
 	sc.Root = sc.InMemoryGraph.CreateVertex(GenerateUuid(),nil)
 

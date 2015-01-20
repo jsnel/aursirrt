@@ -15,7 +15,7 @@ func (cli CmdLineInterface) Run(){
 	for {
 	text, _ := reader.ReadString('\n')
 	switch text{
-	case "quit\n":
+	case "quit\n", "quit":
 		return
 	default:
 		printHelp()

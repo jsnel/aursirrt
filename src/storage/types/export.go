@@ -29,15 +29,15 @@ func GetExportById(id string, agent storage.StorageAgent) Export {
 	c := make(chan Export)
 	e.agent.Read(func (sc *storage.StorageCore) {
 		iv := sc.GetVertex(id)
-		for _,appedge := range iv.Incoming {
-			if appedge.Label == EXPORT_EDGE {
-				e.appid = appedge.Tail.Id
+		for _,appedge := range iv.Incoming() {
+			if appedge.Label() == EXPORT_EDGE {
+				e.appid = appedge.Tail().Id()
 				break
 			}
 		}
-		for _,keyedge := range iv.Outgoing {
-			if keyedge.Label == EXPORT_EDGE {
-				e.key = keyedge.Head.Properties.(appkey.AppKey)
+		for _,keyedge := range iv.Outgoing() {
+			if keyedge.Label() == EXPORT_EDGE {
+				e.key = keyedge.Head().Properties().(appkey.AppKey)
 				break
 			}
 		}
@@ -51,7 +51,7 @@ func (e *Export) Exists() bool {
 		c := make(chan bool)
 		defer close(c)
 		e.agent.Read(func(sc *storage.StorageCore) {
-			c <- sc.GetVertex(e.id) != nil
+			c <- sc.GetVertex(e.id).Id() == e.id
 		})
 		return <-c
 	}
@@ -84,7 +84,7 @@ func (e *Export) Add() {
 		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), EXPORT_EDGE, kv, ev, nil)
 		sc.InMemoryGraph.CreateEdge(storage.GenerateUuid(), EXPORT_EDGE, ev, av, nil)
 
-		id <- ev.Id
+		id <- ev.Id()
 	})
 
 	e.id = <-id
@@ -124,20 +124,19 @@ func (e *Export) setId() {
 
 		i := 0
 		//app - EXPORTEDGE > Export
-		for _,exportedge := range av.Outgoing{
-			if exportedge.Label == EXPORT_EDGE {
+		for _,exportedge := range av.Outgoing(){
+			if exportedge.Label() == EXPORT_EDGE {
 
 				//Export - EXPORTEDGE > Key
-				export := exportedge.Head
-				for _,exportkeyedge := range export.Outgoing {
-					if exportkeyedge.Label == EXPORT_EDGE {
-						if keyid == exportkeyedge.Head.Id {
-							log.Println("STORAGECORE",len(export.Outgoing))
+				export := exportedge.Head()
+				for _,exportkeyedge := range export.Outgoing() {
+					if exportkeyedge.Label() == EXPORT_EDGE {
+						if keyid == exportkeyedge.Head().Id() {
 
 							//Export - TAGEDGE > Tag
-							for _, tagedge := range export.Outgoing {
-								if tagedge.Label == TAG_EDGE {
-									tagname := tagedge.Head.Properties.(string)
+							for _, tagedge := range export.Outgoing() {
+								if tagedge.Label() == TAG_EDGE {
+									tagname := tagedge.Head().Properties().(string)
 									for _, tn := range e.tags {
 
 										if tn == tagname {
@@ -149,7 +148,7 @@ func (e *Export) setId() {
 							}
 
 							if len(e.tags) == i {
-								c <- export.Id
+								c <- export.Id()
 								return
 							}
 
@@ -199,10 +198,10 @@ func (e Export) GetTags() ([]Tag){
 	defer close(c)
 	e.agent.Read(func (sc *storage.StorageCore){
 		ev := sc.GetVertex(e.GetId())
-		for _,tagedge := range ev.Outgoing{
-			if tagedge.Label == TAG_EDGE {
-				tagname,_ := tagedge.Head.Properties.(string)
-				tags = append(tags,Tag{e.agent,k,tagname,tagedge.Head.Id})
+		for _,tagedge := range ev.Outgoing(){
+			if tagedge.Label() == TAG_EDGE {
+				tagname,_ := tagedge.Head().Properties().(string)
+				tags = append(tags,Tag{e.agent,k,tagname,tagedge.Head().Id()})
 			}
 		}
 		c <- tags

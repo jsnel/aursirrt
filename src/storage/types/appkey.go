@@ -23,9 +23,9 @@ func (a AppKey) Exists() bool {
 	c := make(chan bool)
 
 	a.agent.Read(func (sc *storage.StorageCore){
-		for _, ke := range sc.Root.Outgoing {
-			if ke.Label == KNOWN_APPKEY_EDGE {
-				key, _ := ke.Head.Properties.(appkey.AppKey)
+		for _, ke := range sc.Root.Outgoing() {
+			if ke.Label() == KNOWN_APPKEY_EDGE {
+				key, _ := ke.Head().Properties().(appkey.AppKey)
 				if key.ApplicationKeyName == a.appkey.ApplicationKeyName {
 					c<-true
 					return
@@ -43,11 +43,11 @@ func (a AppKey) GetId() string {
 	c := make(chan string)
 
 	a.agent.Read(func (sc *storage.StorageCore){
-		for _, ke := range sc.Root.Outgoing {
-			if ke.Label == KNOWN_APPKEY_EDGE {
-				key, _ := ke.Head.Properties.(appkey.AppKey)
+		for _, ke := range sc.Root.Outgoing() {
+			if ke.Label() == KNOWN_APPKEY_EDGE {
+				key, _ := ke.Head().Properties().(appkey.AppKey)
 				if key.ApplicationKeyName == a.appkey.ApplicationKeyName {
-					c<-ke.Head.Id
+					c<-ke.Head().Id()
 					return
 				}
 			}
@@ -63,9 +63,9 @@ func (a AppKey) GetExporter() (exporter []Export) {
 	c := make(chan string,1)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
-		for _, ke := range sc.GetVertex(kid).Incoming {
-			if ke.Label == EXPORT_EDGE {
-					c<-ke.Tail.Id
+		for _, ke := range sc.GetVertex(kid).Incoming() {
+			if ke.Label() == EXPORT_EDGE {
+					c<-ke.Tail().Id()
 				}
 			}
 
@@ -85,9 +85,9 @@ func (a AppKey) GetImporter() (importer []Import) {
 	c := make(chan string,1)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
-		for _, ke := range sc.GetVertex(kid).Incoming {
-			if ke.Label == IMPORT_EDGE {
-					c<-ke.Tail.Id
+		for _, ke := range sc.GetVertex(kid).Incoming() {
+			if ke.Label() == IMPORT_EDGE {
+					c<-ke.Tail().Id()
 				}
 			}
 
@@ -108,10 +108,10 @@ func (a AppKey) GetListener(function string,export Export) (importer []Import) {
 	c := make(chan string,1)
 	kid := a.GetId()
 	a.agent.Read(func (sc *storage.StorageCore){
-		for _, ke := range sc.GetVertex(kid).Incoming {
-			if ke.Label == LISTEN_EDGE  {
-				if ke.Properties.(string) == function {
-					c<-ke.Tail.Id
+		for _, ke := range sc.GetVertex(kid).Incoming() {
+			if ke.Label() == LISTEN_EDGE  {
+				if ke.Properties().(string) == function {
+					c<-ke.Tail().Id()
 				}
 				}
 			}

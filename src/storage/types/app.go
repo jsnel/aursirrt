@@ -28,9 +28,9 @@ func GetNodes(agent storage.StorageAgent) []App {
 
 	c := make(chan string)
 	agent.Read(func (sc *storage.StorageCore){
-		for _, nodeedge := range sc.Root.Outgoing {
-			if nodeedge.Label == KNOWN_NODE_EDGE {
-				c <- nodeedge.Head.Id
+		for _, nodeedge := range sc.Root.Outgoing() {
+			if nodeedge.Label() == KNOWN_NODE_EDGE {
+				c <- nodeedge.Head().Id()
 			}
 		}
 		close(c)
@@ -50,9 +50,9 @@ func GetApps(agent storage.StorageAgent) []App {
 
 	c := make(chan string)
 	agent.Read(func (sc *storage.StorageCore){
-		for _, nodeedge := range sc.Root.Outgoing {
-			if nodeedge.Label == KNOWN_APP_EDGE {
-				c <- nodeedge.Head.Id
+		for _, nodeedge := range sc.Root.Outgoing() {
+			if nodeedge.Label() == KNOWN_APP_EDGE {
+				c <- nodeedge.Head().Id()
 			}
 		}
 		close(c)
@@ -76,7 +76,7 @@ func (app App) Exists() bool {
 	c := make(chan bool)
 	defer close(c)
 	app.agent.Read(func (sc *storage.StorageCore){
-		c <- sc.GetVertex(app.Id) != nil
+		c <- sc.GetVertex(app.Id).Id() == app.Id
 	})
 
 	return <- c
@@ -89,7 +89,7 @@ func (app App) IsNode() bool {
 	c := make(chan bool)
 	defer close(c)
 	app.agent.Read(func (sc *storage.StorageCore){
-		c <- sc.GetVertex(app.Id).Properties.(appproperties).dockmsg.Node
+		c <- sc.GetVertex(app.Id).Properties().(appproperties).dockmsg.Node
 	})
 
 	return <- c
@@ -126,7 +126,7 @@ func (app App) getProperties() (appproperties,bool) {
 	app.agent.Read(func (sc *storage.StorageCore){
 		av := sc.GetVertex(app.Id)
 		if av != nil {
-			c <- av.Properties.(appproperties)
+			c <- av.Properties().(appproperties)
 		} else {
 			fail <- struct{}{}
 		}
@@ -174,9 +174,9 @@ func (app App) GetExports() (exports []Export){
 
 	app.agent.Read(func (sc *storage.StorageCore){
 		av := sc.GetVertex(app.Id)
-		for _, expedge := range av.Outgoing {
-			if expedge.Label == EXPORT_EDGE {
-				c<- expedge.Head.Id
+		for _, expedge := range av.Outgoing() {
+			if expedge.Label() == EXPORT_EDGE {
+				c<- expedge.Head().Id()
 			}
 		}
 		close(c)
@@ -200,9 +200,9 @@ func (app App) GetImports() (imports []Import){
 
 	app.agent.Read(func (sc *storage.StorageCore){
 		av := sc.GetVertex(app.Id)
-		for _, expedge := range av.Outgoing {
-			if expedge.Label == IMPORT_EDGE {
-				c<- expedge.Head.Id
+		for _, expedge := range av.Outgoing() {
+			if expedge.Label() == IMPORT_EDGE {
+				c<- expedge.Head().Id()
 			}
 		}
 		close(c)

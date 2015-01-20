@@ -29,11 +29,11 @@ func (t *Tag) setId() {
 			c <-""
 			return
 		}
-		for _,e := range kv.Incoming{
-			if e.Label == TAG_EDGE {
-				tagname,_ := e.Tail.Properties.(string)
+		for _,e := range kv.Incoming(){
+			if e.Label() == TAG_EDGE {
+				tagname,_ := e.Tail().Properties().(string)
 				if tagname == t.name {
-					c<-e.Tail.Id
+					c<-e.Tail().Id()
 					return
 				}
 			}
@@ -72,7 +72,7 @@ func (t *Tag) Create(){
 			kv := sc.GetVertex(keyid)
 			sc.CreateEdge(storage.GenerateUuid(), TAG_EDGE, kv,tv, nil)
 
-			c <- tv.Id
+			c <- tv.Id()
 		})
 		t.id = <-c
 
@@ -134,10 +134,10 @@ func (t Tag) UnlinkImport(i Import){
 		t.agent.Write(func (sc *storage.StorageCore){
 
 			tv := sc.GetVertex(tagid)
-			for _, tagedge := range tv.Outgoing {
-				if tagedge.Label == TAG_EDGE {
-					if tagedge.Tail.Id == iid {
-						sc.RemoveEdge(tagedge.Id)
+			for _, tagedge := range tv.Outgoing() {
+				if tagedge.Label() == TAG_EDGE {
+					if tagedge.Tail().Id() == iid {
+						sc.RemoveEdge(tagedge.Id())
 					} else {
 						delete = false
 					}
@@ -163,10 +163,10 @@ func (t Tag) UnlinkExport(e Export){
 		t.agent.Write(func (sc *storage.StorageCore){
 
 			tv := sc.GetVertex(tagid)
-			for _, tagedge := range tv.Incoming {
-				if tagedge.Label == TAG_EDGE {
-					if tagedge.Tail.Id == eid {
-						sc.RemoveEdge(tagedge.Id)
+			for _, tagedge := range tv.Incoming() {
+				if tagedge.Label() == TAG_EDGE {
+					if tagedge.Tail().Id() == eid {
+						sc.RemoveEdge(tagedge.Id())
 					} else {
 						delete = false
 					}
@@ -196,11 +196,11 @@ func (t Tag) Exists() bool {
 			return
 		}
 
-		for _,e := range kv.Incoming{
+		for _,e := range kv.Incoming(){
 
-			if e.Label == TAG_EDGE {
+			if e.Label() == TAG_EDGE {
 
-				tagname,_ := e.Tail.Properties.(string)
+				tagname,_ := e.Tail().Properties().(string)
 				if tagname == t.name {
 
 					c<-true

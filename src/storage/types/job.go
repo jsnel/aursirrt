@@ -41,8 +41,8 @@ func GetJobById(id string, agent storage.StorageAgent)(Job Job){
 			c2 <- nil
 			return
 		}
-		c<-jv.Properties.(jobproperties).request
-		c2<-jv.Properties.(jobproperties).result
+		c<-jv.Properties().(jobproperties).request
+		c2<-jv.Properties().(jobproperties).result
 		return
 	})
 
@@ -95,8 +95,8 @@ func (j *Job) IsAssigned() bool{
 	defer close(c)
 	j.agent.Read(func (sc *storage.StorageCore){
 		jv := sc.GetVertex(j.request.Uuid)
-		for _,doingedge := range jv.Incoming{
-			if doingedge.Label == DOING_JOB_EDGE {
+		for _,doingedge := range jv.Incoming(){
+			if doingedge.Label() == DOING_JOB_EDGE {
 				c <- true
 				return
 			}
@@ -112,9 +112,9 @@ func (j *Job) GetAssignedExport() Export{
 	defer close(c)
 	j.agent.Read(func (sc *storage.StorageCore){
 		jv := sc.GetVertex(j.request.Uuid)
-		for _,doingedge := range jv.Incoming{
-			if doingedge.Label == DOING_JOB_EDGE {
-				c <- doingedge.Tail.Id
+		for _,doingedge := range jv.Incoming(){
+			if doingedge.Label() == DOING_JOB_EDGE {
+				c <- doingedge.Tail().Id()
 				return
 			}
 		}
@@ -155,7 +155,7 @@ func (j Job) Exists() bool {
 	defer close(c)
 	j.agent.Read(func (sc *storage.StorageCore){
 		kv := sc.GetVertex(j.request.Uuid)
-		if kv == nil {
+		if kv.Id() == "" {
 			c <-false
 			return
 		}
@@ -167,6 +167,10 @@ func (j Job) Exists() bool {
 
 
 func (j Job) Remove() bool {
+	if !j.Exists(){
+		return false
+		
+	}
 	c := make(chan bool)
 	defer close(c)
 	j.agent.Write(func (sc *storage.StorageCore){

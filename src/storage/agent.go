@@ -32,7 +32,7 @@ func (a StorageAgent) GetId() string {
 	c := make(chan string)
 	defer close(c)
 	a.Read( func(sc *StorageCore) {
-		c<-sc.Root.Id
+		c<-sc.Root.Id()
 	})
 	return <-c
 }
