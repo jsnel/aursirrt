@@ -155,7 +155,7 @@ func (j Job) Exists() bool {
 	defer close(c)
 	j.agent.Read(func (sc *storage.StorageCore){
 		kv := sc.GetVertex(j.request.Uuid)
-		if kv.Id() == "" {
+		if kv == nil {
 			c <-false
 			return
 		}

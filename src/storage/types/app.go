@@ -76,7 +76,11 @@ func (app App) Exists() bool {
 	c := make(chan bool)
 	defer close(c)
 	app.agent.Read(func (sc *storage.StorageCore){
-		c <- sc.GetVertex(app.Id).Id() == app.Id
+		if av := sc.GetVertex(app.Id); av!=nil {
+			c <- av.Id() == app.Id
+		} else {
+			c<-false
+		}
 	})
 
 	return <- c
