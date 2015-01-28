@@ -1,6 +1,9 @@
 package processors
 
-import "log"
+import (
+	"log"
+	"aursirrt/src/config"
+)
 
 func print(msg string) {
 	log.Println("PROCESSORS", msg)
@@ -8,7 +11,7 @@ func print(msg string) {
 }
 
 func printDebug(msg ...interface {}) {
-	if true {
+	if config.Debug {
 		log.Println("DEBUG PROCESSORS", msg)
 	}
 }

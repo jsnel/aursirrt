@@ -43,7 +43,13 @@ func GetExportById(id string, agent storage.StorageAgent) Export {
 		}
 		c<-e
 	})
-	return <-c
+
+	e = <-c
+	e.tags = []string{}
+	for _, tag := range e.GetTags() {
+		e.tags = append(e.tags,tag.name)
+	}
+	return e
 }
 
 func (e *Export) Exists() bool {
@@ -51,7 +57,7 @@ func (e *Export) Exists() bool {
 		c := make(chan bool)
 		defer close(c)
 		e.agent.Read(func(sc *storage.StorageCore) {
-			c <- sc.GetVertex(e.id).Id() == e.id
+			c <- sc.GetVertex(e.id)!=nil
 		})
 		return <-c
 	}
@@ -96,7 +102,7 @@ func (e *Export) Add() {
 
 			t.Create()
 
-			t.LinkExport(*e)
+			t.LinkExport(e)
 
 
 		}
@@ -171,7 +177,7 @@ func (e *Export) GetId() string {
 
 
 
-	func (e Export) UpdateTags(tags []string){
+	func (e *Export) UpdateTags(tags []string){
 	e.ClearTags()
 	e.tags = tags
 	k := e.GetAppKey()

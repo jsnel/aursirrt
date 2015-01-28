@@ -56,14 +56,14 @@ func GetImportById(id string, agent storage.StorageAgent) Import {
 
 
 func (i *Import) GetTagNames() []string {
-	                          return i.tags
+	 return i.tags
 }
 func (i *Import) Exists() bool {
 	if i.id != "" {
 		c := make(chan bool)
 		defer close(c)
 		i.agent.Read(func(sc *storage.StorageCore) {
-			c <- sc.GetVertex(i.id).Id() == i.id
+			c <- sc.GetVertex(i.id) != nil
 		})
 		return <-c
 	}
@@ -102,7 +102,7 @@ func (i *Import) Add() {
 		for _, tag := range i.tags {
 			t := GetTag(k,tag,i.agent)
 			t.Create()
-			t.LinkImport(*i)
+			t.LinkImport(i)
 		}
 	}
 }
@@ -198,7 +198,7 @@ func (e *Import) setId() {
 	e.id = <- c
 	return
 }
-func (i Import) GetId() string {
+func (i *Import) GetId() string {
 	if i.id == ""{
 		i.setId()
 	}
@@ -208,15 +208,19 @@ func (i Import) GetId() string {
 func (i *Import) UpdateTags(tags []string){
 	i.ClearTags()
 	i.tags = tags
+	printDebug(" imp is ",i.id)
+	printDebug(" imp is ",i.GetId())
 	k := i.GetAppKey()
 	for _, tag := range i.tags {
 		t := GetTag(k,tag,i.agent)
+		printDebug("tag imp is ",i.GetId())
+
 		t.Create()
-		t.LinkImport(*i)
+		t.LinkImport(i)
 	}
 }
 
-func (i Import) ClearTags(){
+func (i *Import) ClearTags(){
 	//key := GetAppKey(e.key,e.agent)
 	for _, tag := range i.GetTags() {
 		tag.UnlinkImport(i)
@@ -231,8 +235,9 @@ func (e Import) GetTags() ([]Tag){
 	k := GetAppKey(e.key, e.agent)
 	c := make (chan []Tag)
 	defer close(c)
+	iid := e.GetId()
 	e.agent.Read(func (sc *storage.StorageCore){
-		ev := sc.GetVertex(e.GetId())
+		ev := sc.GetVertex(iid)
 		for _,tagedge := range ev.Outgoing(){
 			if tagedge.Label() == TAG_EDGE {
 				tagname,_ := tagedge.Head().Properties().(string)

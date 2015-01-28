@@ -2,7 +2,7 @@ package types
 
 import (
 	"testing"
-	"storage"
+	"aursirrt/src/storage"
 	"github.com/joernweissenborn/aursir4go/messages"
 )
 
@@ -44,5 +44,8 @@ func (testconn) Send(msgtype int64, codec string,msg []byte) (err error) {
 	return
 }
 func (testconn) Init()error{
+	return nil
+}
+func (testconn) Close()error{
 	return nil
 }

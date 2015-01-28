@@ -7,7 +7,7 @@ func print(msg string) {
 
 }
 
-func printDebug(msg string) {
+func printDebug(msg ...interface {}) {
 	if true {
 		log.Println("DEBUG STORAGECORE", msg)
 	}

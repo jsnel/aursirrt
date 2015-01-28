@@ -2,7 +2,7 @@ package types
 
 import (
 	"testing"
-	"storage"
+	"aursirrt/src/storage"
 	"github.com/joernweissenborn/aursir4go/messages"
 	"github.com/joernweissenborn/aursir4go/Example/keys"
 )
@@ -31,9 +31,20 @@ func TestExport(t *testing.T){
 	if export.GetId() == "" {
 		t.Error("Could not retrieve export")
 	}
-	             appkey := export.GetAppKey()
+	if len(export.GetTags()) == 0 {
+		t.Error("Could not retrieve tags")
+
+	}
+	appkey := export.GetAppKey()
 	if len(appkey.GetExporter()) == 0 {
 		t.Error("Could not retrieve export from key")
+
+	}
+	
+	export.UpdateTags([]string{"hi"})
+	if export.GetTagNames()[0] != "hi"{
+
+		t.Error("Could not retrieve tag from key")
 
 	}
 

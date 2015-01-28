@@ -4,9 +4,9 @@ import (
 	"log"
 	"aursirrt/src/storage"
 	"fmt"
+	"aursirrt/src/config"
 )
 
-const DEBUG = true
 
 
 func Process(procchan chan Processor, storageagent storage.StorageAgent, maxprocesses int64) {
@@ -44,7 +44,7 @@ func print(msg string){
 
 func debugPrint(msg string){
 
-	if DEBUG {
+	if config.Debug {
 		log.Println("DEBUG PROCESSOR",msg)
 
 	}

@@ -1,7 +1,7 @@
 package types
 import (
 	"testing"
-	"storage"
+	"aursirrt/src/storage"
 	"github.com/joernweissenborn/aursir4go/messages"
 	"time"
 	"github.com/joernweissenborn/aursir4go/calltypes"

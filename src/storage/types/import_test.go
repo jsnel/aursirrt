@@ -1,7 +1,7 @@
 package types
 import (
 	"testing"
-	"storage"
+	"aursirrt/src/storage"
 	"github.com/joernweissenborn/aursir4go/messages"
 	"github.com/joernweissenborn/aursir4go/Example/keys"
 )
@@ -50,6 +50,13 @@ func TestImport(t *testing.T){
 	if !Import.HasExporter() {
 		t.Error("Exporter should be present")
 	}
+	Import.UpdateTags([]string{"hi"})
+	if Import.GetTagNames()[0] != "hi"{
+
+		t.Error("Could not retrieve tag from key")
+
+	}
+
 }
 
 func TestListen(t *testing.T){

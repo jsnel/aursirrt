@@ -1,7 +1,6 @@
 package config
 
 import (
-	"flag"
 	"fmt"
 )
 
@@ -18,9 +17,4 @@ func (i *connections) Set(value string) error {
 }
 
 var Zconnections connections
-
-func init(){
-	flag.Var(&Zconnections, "zconnection", "e.g. 192.168.0.1:5555, if no port specified p2p will be enabled on the iface")
-
-}
 

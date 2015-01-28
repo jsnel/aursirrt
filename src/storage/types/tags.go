@@ -81,7 +81,7 @@ func (t *Tag) Create(){
 
 
 
-func (t Tag) LinkExport(e Export){
+func (t *Tag) LinkExport(e *Export){
 	if t.Exists() {
 		c := make(chan string)
 		defer close(c)
@@ -103,13 +103,13 @@ func (t Tag) LinkExport(e Export){
 	}
 }
 
-func (t Tag) LinkImport(i Import){
+func (t *Tag) LinkImport(i *Import){
 	if t.Exists() {
 		c := make(chan string)
 		defer close(c)
 		iid := i.GetId()
-		printDebug(fmt.Sprint("linking tag and key ",t.id,iid))
-		       tagid := t.GetId()
+		printDebug("linking tag and import ",t.id,iid)
+		tagid := t.GetId()
 		t.agent.Write(func (sc *storage.StorageCore){
 			iv := sc.GetVertex(iid)
 
@@ -124,7 +124,7 @@ func (t Tag) LinkImport(i Import){
 
 	}
 }
-func (t Tag) UnlinkImport(i Import){
+func (t *Tag) UnlinkImport(i *Import){
 	if t.Exists() {
 		c := make(chan string)
 		defer close(c)
@@ -153,7 +153,7 @@ func (t Tag) UnlinkImport(i Import){
 
 	}
 }
-func (t Tag) UnlinkExport(e Export){
+func (t *Tag) UnlinkExport(e Export){
 	if t.Exists() {
 		c := make(chan string)
 		defer close(c)
@@ -183,7 +183,7 @@ func (t Tag) UnlinkExport(e Export){
 	}
 }
 
-func (t Tag) Exists() bool {
+func (t *Tag) Exists() bool {
 	c := make(chan bool)
 	defer close(c)
 	keyid := t.key.GetId()

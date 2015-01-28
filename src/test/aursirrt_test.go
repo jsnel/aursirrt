@@ -192,6 +192,35 @@ func TestTagging(T *testing.T) {
 		T.Error("could not connect to appkey")
 	}
 }
+func TestExporterCrash(T *testing.T) {
+	importer, imp := testimporter()
+	defer importer.Close()
+	exporter, exp := testexporter()
+
+	res, _ := imp.CallFunction(keys.HelloAurSirAppKey.Functions[0].Name, keys.SayHelloReq{"AHOI"}, calltypes.ONE2ONE)
+	time.Sleep(500*time.Millisecond)
+	exporter.Close()
+	exporter, exp = testexporter()
+
+	req := <-exp.Request
+	var SayHelloReq keys.SayHelloReq
+	req.Decode(&SayHelloReq)
+	log.Println(SayHelloReq)
+
+	if SayHelloReq.Greeting != "AHOI" {
+		T.Error("got wrong request parameter")
+	}
+	err := exp.Reply(&req, keys.SayHelloRes{"MOINSEN"})
+	if err != nil {
+		T.Error(err)
+	}
+	var result keys.SayHelloRes
+	(<-res).Decode(&result)
+	log.Println(result)
+	if result.Answer != "MOINSEN" {
+		T.Error("got wrong result parameter")
+	}
+}
 /*/
 
 func TestCallChain(T *testing.T) {

@@ -9,6 +9,7 @@ import (
 	"time"
 	"encoding/json"
 	"fmt"
+	"aursirrt/src/config"
 )
 
 type DockerZmq struct {
@@ -70,14 +71,14 @@ func (dzmq *DockerZmq) listen() {
 	for {
 
 		msg, _ := dzmq.skt.RecvMessage(0)
-		log.Println("ZMQAppDocker got message from", msg)
+		printDebug("got message from", msg)
 
 		if len(msg) > 4 {
 
 			senderId := msg[0]
 
 			msgtype, err := strconv.ParseInt(msg[1], 10, 64)
-			log.Println("ZMQAppDocker got message from", msg)
+			printDebug("ZMQAppDocker got message from", msg)
 			codec := msg[2]
 			if err == nil {
 
@@ -164,10 +165,12 @@ func (dzmq *DockerZmq) closeConnection(id string){
 
 
 
-func mprint(msg string){
+func mprint(msg ...interface {}){
 	log.Println("DOCKERZMQ", msg)
 }
 
-func printDebug(msg string){
-	log.Println("DEBUG","DOCKERZMQ", msg)
+func printDebug(msg ...interface {}){
+	if config.Debug{
+		log.Println("DEBUG","DOCKERZMQ", msg)
+	}
 }
