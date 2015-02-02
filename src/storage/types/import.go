@@ -32,6 +32,10 @@ func GetImportById(id string, agent storage.StorageAgent) Import {
 	defer close(c)
 	i.agent.Read(func (sc *storage.StorageCore) {
 		iv := sc.GetVertex(id)
+		if iv == nil {
+			c <-i
+			return
+		}
 		for _,appedge := range iv.Incoming() {
 			if appedge.Label() == IMPORT_EDGE {
 				i.appid = appedge.Tail().Id()
