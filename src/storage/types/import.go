@@ -71,7 +71,7 @@ func (i *Import) Exists() bool {
 		})
 		return <-c
 	}
-	return i.id == ""
+	return false
 
 }
 
