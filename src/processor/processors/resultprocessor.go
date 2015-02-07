@@ -5,7 +5,6 @@ import (
 	"aursirrt/src/storage/types"
 	"github.com/joernweissenborn/aursir4go/messages"
 	"github.com/joernweissenborn/aursir4go/calltypes"
-	"log"
 )
 
 type ResultProcessor struct {
@@ -19,7 +18,6 @@ type ResultProcessor struct {
 func (p ResultProcessor) Process() {
 
 	job := types.GetJobFromResult(p.Result,p.GetAgent())
-	               	log.Println(p.Result)
 	switch p.Result.CallType {
 	case calltypes.ONE2ONE, calltypes.ONE2MANY:
 		if job.Exists() {
@@ -34,14 +32,15 @@ func (p ResultProcessor) Process() {
 	case calltypes.MANY2MANY, calltypes.MANY2ONE:
 		exp := types.GetExportById(p.Result.ExportId,p.GetAgent())
 	for _,imp := range exp.GetAppKey().GetListener(p.Result.FunctionName,exp)   {
-
-			var smp SendMessageProcessor
-			smp.App = imp.GetApp()
-			smp.Msg = p.Result
-			smp.GenericProcessor = processor.GetGenericProcessor()
+		res := p.Result
+		res.ImportId = imp.GetId()
+		var smp SendMessageProcessor
+		smp.App = imp.GetApp()
+		smp.Msg = res
+		smp.GenericProcessor = processor.GetGenericProcessor()
 		p.SpawnProcess(smp)
 		job.Remove()
-		}
+	}
 	}
 
 
